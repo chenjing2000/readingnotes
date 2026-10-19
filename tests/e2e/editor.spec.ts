@@ -44,10 +44,12 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue(changed);
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await page.getByLabel('词头 1', { exact: true }).fill('edited word');
-  await page.getByRole('button', { name: '词汇 1 下移', exact: true }).click();
-  await page.getByRole('button', { name: '添加词汇', exact: true }).click();
+  await page.getByRole('button', { name: '下移选中词汇', exact: true }).click();
+  await page.getByLabel('词头 13', { exact: true }).click();
+  await page.getByRole('button', { name: '在选中词汇下方添加空白行', exact: true }).click();
   await page.getByLabel('词头 14', { exact: true }).fill('new vocabulary');
-  await page.getByRole('button', { name: '删除词汇 3', exact: true }).click();
+  await page.getByLabel('词头 3', { exact: true }).click();
+  await page.getByRole('button', { name: '删除选中词汇', exact: true }).click();
   await page.getByRole('button', { name: '表达', exact: true }).click();
   await page.getByLabel('例句 1', { exact: true }).fill('An edited example.');
   await page.getByLabel('例句译文 1', { exact: true }).fill('编辑后的译文。');

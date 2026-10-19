@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { layoutKey, type Styles } from '../models/project';
 import { useEditorViewModel } from '../viewmodels/useEditorViewModel';
+import VocabularyTable from './VocabularyTable';
 
 type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
@@ -10,7 +11,7 @@ export default function EditorView() {
   const [tab, setTab] = useState<Tab>('原文');
   const [zoom, setZoom] = useState(0.46);
   const preview = useRef<HTMLDivElement>(null);
-  const inputs = useRef(new Map<string, HTMLTextAreaElement>());
+  const inputs = useRef(new Map<string, HTMLInputElement | HTMLTextAreaElement>());
   const [focusId, setFocusId] = useState('');
   useLayoutEffect(() => {
     if (!layout) return;
@@ -40,14 +41,14 @@ export default function EditorView() {
   function breakControl(id: string, label: string) {
     return <label className="break-control"><input type="checkbox" aria-label={`${label} 前换页`} checked={project.layoutOverrides.manualPageBreaks.includes(id)} onChange={event => vm.setPageBreak(id, event.target.checked)} />前换页</label>;
   }
-  function items(key: 'vocabulary' | 'expressions') {
-    const vocabulary = key === 'vocabulary';
-    const name = vocabulary ? '词汇' : '表达';
-    const labels = vocabulary ? { word: '词头', ipa: '英式音标', pos: '词性', meaning: '释义' } : { phrase: '短语', meaning: '中文含义', example: '例句', exampleTranslation: '例句译文' };
+  function expressions() {
+    const key = 'expressions';
+    const name = '表达';
+    const labels = { phrase: '短语', meaning: '中文含义', example: '例句', exampleTranslation: '例句译文' };
     return <>{project[key].map((entry, index) => <section className="edit-entry" key={entry.id}>
       <div className="entry-toolbar"><b>{name} {index + 1}</b><span className="spacer" /><button aria-label={`${name} ${index + 1} 上移`} disabled={index === 0} onClick={() => vm.reorder(key, index, -1)}>↑</button><button aria-label={`${name} ${index + 1} 下移`} disabled={index === project[key].length - 1} onClick={() => vm.reorder(key, index, 1)}>↓</button><button aria-label={`删除${name} ${index + 1}`} onClick={() => vm.removeEntry(key, entry.id)}>删除</button></div>
       {Object.entries(labels).map(([property, label]) => field(`${label} ${index + 1}`, (entry as unknown as Record<string, string>)[property] ?? '', value => vm.setEntryField(key, entry.id, property, value), `${key}:${entry.id}:${property}`))}
-      {breakControl(vocabulary ? layoutKey('vocab', entry.id) : layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
+      {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
   const styleFields: [keyof Styles, string, number, number, number][] = [
@@ -64,19 +65,19 @@ export default function EditorView() {
     <div className="workspace"><aside className="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
       <nav aria-label="编辑板块">{(['原文', '词汇', '表达', '主旨与译文', '样式'] as Tab[]).map(name => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>)}</nav>
       <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>撤销</button><button onClick={vm.redo} disabled={!canRedo}>重做</button><span>支持最近 100 次修改</span></div>
-      <div className="fields">
+      <div className={`fields${tab === '词汇' ? ' vocabulary-fields' : ''}`}>
         {tab === '原文' && <>
           {field('英文标题', project.title, value => vm.setProjectText('title', value), 'project:title')}
           <p className="hint">在下方英文框选择文字，再点“标注 / 取消”。高亮字号始终继承正文。</p>
           {project.source.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
             {field(`英文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('source', paragraph.id, value), `source:${paragraph.id}`, 9)}
-            <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`)!; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button>{breakControl(layoutKey('article', paragraph.id), `英文段落 ${index + 1}`)}</div>
+            <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button>{breakControl(layoutKey('article', paragraph.id), `英文段落 ${index + 1}`)}</div>
             <button onClick={() => vm.removeParagraph('source', paragraph.id)}>删除英文段落 {index + 1}</button>
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('source')}>添加英文段落</button>
         </>}
-        {tab === '词汇' && items('vocabulary')}
-        {tab === '表达' && items('expressions')}
+        {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={(id, input) => { if (input) inputs.current.set(id, input); else inputs.current.delete(id); }} focusField={setFocusId} />}
+        {tab === '表达' && expressions()}
         {tab === '主旨与译文' && <>
           {field('Main Idea', project.mainIdea, value => vm.setProjectText('mainIdea', value), 'project:mainIdea', 4)}
           {breakControl(layoutKey('mainIdea', 'mainIdea'), 'Main Idea')}

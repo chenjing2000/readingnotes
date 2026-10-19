@@ -11,6 +11,10 @@ export function useEditorViewModel() {
   const [boot] = useState(restoreDraft);
   const [history, setHistory] = useState<{ past: Project[]; present: Project; future: Project[] }>({ past: [], present: boot.project, future: [] });
   const project = history.present;
+  const [vocabularySelection, setVocabularySelection] = useState<string | null>(null);
+  const vocabularyIndex = project.vocabulary.findIndex(entry => entry.id === vocabularySelection);
+  const selectedVocabularyIndex = vocabularyIndex >= 0 ? vocabularyIndex : project.vocabulary.length ? 0 : -1;
+  const selectedVocabulary = project.vocabulary[selectedVocabularyIndex];
   const [notice, setNotice] = useState(boot.notice);
   const [error, setError] = useState('');
   const [cacheStatus, setCacheStatus] = useState('');
@@ -105,6 +109,29 @@ export function useEditorViewModel() {
   function removeEntry(key: EntryCollection, id: string) {
     update(current => ({ ...current, [key]: current[key].filter(item => item.id !== id) }));
   }
+  function selectVocabulary(id: string) { setVocabularySelection(id); }
+  function moveSelectedVocabulary(direction: number) {
+    if (!selectedVocabulary) return;
+    setVocabularySelection(selectedVocabulary.id);
+    reorder('vocabulary', selectedVocabularyIndex, direction);
+  }
+  function deleteSelectedVocabulary() {
+    if (!selectedVocabulary) return;
+    const next = project.vocabulary[selectedVocabularyIndex + 1] ?? project.vocabulary[selectedVocabularyIndex - 1];
+    setVocabularySelection(next?.id ?? null);
+    removeEntry('vocabulary', selectedVocabulary.id);
+  }
+  function insertVocabularyBelow() {
+    const entry = { id: newId(), word: '', ipa: '', pos: '', meaning: '' };
+    update(current => {
+      const vocabulary = [...current.vocabulary];
+      const index = vocabulary.findIndex(item => item.id === selectedVocabulary?.id);
+      vocabulary.splice(index + 1, 0, entry);
+      return { ...current, vocabulary };
+    });
+    setVocabularySelection(entry.id);
+    return entry.id;
+  }
   function setStyle<K extends keyof Styles>(key: K, value: Styles[K]) {
     update(current => ({ ...current, styles: { ...current.styles, [key]: value } }));
   }
@@ -121,6 +148,7 @@ export function useEditorViewModel() {
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
     highlightRange, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
+    selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
     clearWarnings, clearError, downloadRejectedDraft,
   };
 }
