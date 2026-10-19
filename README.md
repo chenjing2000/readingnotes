@@ -9,7 +9,7 @@ Windows 本地运行的 React / TypeScript 编辑器：完整内容编辑、结�
 在 PowerShell 中执行（使用 `.cmd` 避免本机 PowerShell 脚本执行策略影响）：
 
 ```powershell
-Set-Location 'E:\Projects\RedNotes01\english-reading-editor-handoff'
+Set-Location 'C:\Projects\EnglishNotes'
 node --version
 npm.cmd ci
 npx.cmd playwright install chromium
@@ -54,7 +54,7 @@ npm.cmd run demo
 
 E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手动启动的编辑器，以确保测试使用当前代码。`demo` 使用生产构建及独立 4318 端口，生成 `demo/editor.png`、`demo/page-01.png` 等、`demo/reading-cards.zip` 和 `demo/validation.json`，实际检查尺寸、重复导出及预览一致性。
 
-本次结果与 20 项验收逐条说明见 [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md)。可直接打开 [已生成的演示 ZIP](demo/reading-cards.zip) 和 [实际编辑器截图](demo/editor.png)。
+初次实现的 20 项验收说明见 [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md)；后续整理及最新复验结果见 [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)。可直接打开 [已生成的演示 ZIP](demo/reading-cards.zip) 和 [实际编辑器截图](demo/editor.png)。
 
 ## 文件与数据格式
 
@@ -64,6 +64,7 @@ E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手�
 - `server.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
 - `projects/brainco/` 与 `reference/v17/` 保留原始内容。`demo/project.json` 是可继续导入编辑的 schema 2 样例。
 - schema 2 的精确重点存为 `{id, paragraphId, start, end, quote}`，区间单位为 JavaScript UTF-16 code unit，`end` 不包含端点；保存/加载校验 quote。
+- schema 1 迁移时为每处高亮生成 UUID，保存后保留该 ID；原附件不改写。手动分页键单独允许最长 2048 字符，以容纳最长 200 字符业务 ID 的 JSON 转义及节点类型。
 - 全局样式在 `styles`；手动分页在 `layoutOverrides.manualPageBreaks`，采用 `JSON.stringify([kind, sourceId])` 的字符串键隔离业务 ID。旧的裸 ID 会迁移。`elementStyles` 仅保留数据，当前不应用单元素覆写。
 
 尚未实现 Markdown 导入/导出、standalone HTML、直接在预览输入、自由位置分页、单元素样式、孤行优化或桌面安装包。词汇统一跟在完整文章之后，不执行文章页与对应词汇的自动配对；这是 HANDOFF 允许的初版简化。

@@ -103,6 +103,21 @@ test('selected occurrence highlight and preview navigation', async ({ page }) =>
   await expect(input).toBeFocused();
 });
 
+test('an invalid import cannot re-enable export after pagination fails', async ({ page }) => {
+  await page.goto('/'); await ready(page);
+  await page.evaluate(() => {
+    crypto.subtle.digest = async () => { throw new Error('Simulated layout failure'); };
+  });
+  await page.getByLabel('英文标题', { exact: true }).fill('A changed project');
+  await expect(page.getByRole('alert')).toContainText('分页失败');
+  const exportButton = page.getByRole('button', { name: '导出全部 PNG / ZIP', exact: true });
+  await expect(exportButton).toBeDisabled();
+  await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{') });
+  await expect(page.getByRole('alert')).toContainText('无法打开项目');
+  await expect(page.getByLabel('英文标题', { exact: true })).toHaveValue('A changed project');
+  await expect(exportButton).toBeDisabled();
+});
+
 test('line pagination preserves long sentences, Chinese, graphemes, columns and >10 pages', async ({ page }) => {
   await page.goto('/'); await ready(page);
   const longExample = Array.from({ length: 230 }, (_, index) => `example${index}`).join(' ');

@@ -1,5 +1,7 @@
 # 数据模型与分页引擎说明
 
+> 本文保留最初交接时的设计建议，不代表全部功能已经实现。当前 schema 2、已实现功能与明确简化以 `README.md` 和 `src/model.ts` 为准；本次整理的复验记录见 `CODE_REVIEW_REPORT.md`。Markdown 导出、单元素样式及孤行优化尚未实现。
+
 ## 项目文件
 
 `projects/brainco/project.json` 是从 V17 页面逆向提取的**可导入样例初稿**，不是最终的数据 schema。字段含 title、source.paragraphs、vocabulary、expressions、mainIdea、translation.paragraphs、theme、layoutOverrides。可参考并迁移为 Zod schema，保留 `schemaVersion` + 稳定 ID。

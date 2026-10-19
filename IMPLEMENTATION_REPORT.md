@@ -1,5 +1,7 @@
 # 实施与验收报告
 
+> 本报告记录初次实现的历史验收；后续代码整理及最新验证结果见 [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)。原始交接 ZIP 对照结论仅适用于当时环境，不代表后续复验重新检查过该 ZIP。
+
 验收日期：2026-10-19（Asia/Shanghai）。实现位置：当前 handoff 目录。没有修改原始 `projects/brainco/` 与 `reference/v17/`；15 个文件已逐字节对照上级原始交接 ZIP。
 
 ## 结果

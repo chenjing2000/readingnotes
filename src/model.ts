@@ -14,6 +14,8 @@ export const styleSchema = z.object({
 });
 export const defaults = styleSchema.parse({});
 const id = z.string().min(1).max(200);
+// A layout key contains a kind and an ID; JSON escaping can expand each ID character to six characters.
+const pageBreakKey = z.string().min(1).max(2048);
 const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(value), '含无效控制字符或乱码替代符');
 const paragraph = z.object({ id, text });
 const highlight = z.object({ id, paragraphId: id, start: z.number().int().nonnegative(), end: z.number().int().positive(), quote: text });
@@ -25,7 +27,7 @@ const common = {
   expressions: z.array(z.object({ id, phrase: text, meaning: text, example: text, exampleTranslation: text })).max(2000),
   mainIdea: text,
   theme: z.literal('classic').default('classic'),
-  layoutOverrides: z.object({ manualPageBreaks: z.array(id).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
+  layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
 };
 const currentSchema = z.object({ ...common, schemaVersion: z.literal(2), highlights: z.array(highlight), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
 const legacySchema = z.object({ ...common, schemaVersion: z.literal(1), highlights: z.array(z.object({ id, text, style: z.string().optional() })) });
@@ -44,7 +46,7 @@ export function parseProject(input: unknown): Project {
       for (const paragraph of old.source.paragraphs) {
         let start = paragraph.text.indexOf(hint.text);
         while (start !== -1) {
-          highlights.push({ id: `${hint.id}-${paragraph.id}-${start}`, paragraphId: paragraph.id, start, end: start + hint.text.length, quote: hint.text });
+          highlights.push({ id: newId(), paragraphId: paragraph.id, start, end: start + hint.text.length, quote: hint.text });
           start = paragraph.text.indexOf(hint.text, start + hint.text.length);
         }
       }

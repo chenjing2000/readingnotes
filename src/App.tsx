@@ -37,7 +37,8 @@ export default function App() {
   const [error, setError] = useState('');
   const [cacheStatus, setCacheStatus] = useState('');
   const [lastFile, setLastFile] = useState('');
-  const [ready, setReady] = useState(false);
+  const [renderedProject, setRenderedProject] = useState<Project | null>(null);
+  const ready = renderedProject === project;
   const [exporting, setExporting] = useState(false);
   const [pages, setPages] = useState(0);
   const [zoom, setZoom] = useState(0.46);
@@ -59,13 +60,12 @@ export default function App() {
   }, [project]);
   useEffect(() => {
     let cancelled = false;
-    setReady(false);
     const timer = setTimeout(() => {
       paginate(project).then(layout => {
         if (cancelled) return;
         const wrappers = layout.pages.map(card => { const wrapper = document.createElement('div'); wrapper.className = 'card-wrapper'; wrapper.append(card); return wrapper; });
         preview.current!.replaceChildren(...wrappers);
-        setPages(layout.pages.length); setSignature(layout.signature); setReady(true);
+        setPages(layout.pages.length); setSignature(layout.signature); setRenderedProject(project);
         window.editor = { project, signature: layout.signature };
         if (layout.warnings.length) setNotice(layout.warnings.join(' '));
       }).catch(reason => { if (!cancelled) setError(`分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
@@ -96,11 +96,10 @@ export default function App() {
   }
   async function open(file?: File) {
     if (!file) return;
-    setReady(false);
     try {
       const next = parseProject(JSON.parse(await file.text()));
       update(next); setLastFile(stringify(next)); setError(''); setNotice(`已打开 ${file.name}；旧项目可通过撤销恢复。`);
-    } catch (reason) { setReady(!!signature); setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
+    } catch (reason) { setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
   }
   function save() {
     try {
@@ -176,7 +175,7 @@ export default function App() {
           </section>)}
           <button className="add-button" onClick={() => update(current => ({ ...current, translation: { paragraphs: [...current.translation.paragraphs, { id: newId(), text: '' }] } }))}>添加中文段落</button>
         </>}
-        {tab === '样式' && <><p className="hint">画布固定 1200 × 1600。数值在离开输入框时校验；默认使用本地打包字体。</p><div className="style-grid">
+        {tab === '样式' && <><p className="hint">画布固定 1200 × 1600。数值在允许范围内时立即应用；默认使用本地打包字体。</p><div className="style-grid">
           {styleFields.map(([key, label, min, max, step]) => <label className="field" key={key}><span>{label}</span><input type="number" aria-label={label} min={min} max={max} step={step} value={project.styles[key]} onChange={event => { const value = Number(event.target.value); if (value >= min && value <= max) update(current => ({ ...current, styles: { ...current.styles, [key]: value } })); }} /></label>)}
           {([['accent', '强调色'], ['divider', '分割线颜色']] as const).map(([key, label]) => <label className="field" key={key}><span>{label}</span><input type="color" aria-label={label} value={project.styles[key]} onChange={event => update(current => ({ ...current, styles: { ...current.styles, [key]: event.target.value } }))} /></label>)}
         </div><button className="add-button" onClick={() => update(current => ({ ...current, styles: { ...defaults } }))}>恢复模板默认</button></>}

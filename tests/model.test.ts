@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import fixture from '../projects/brainco/project.json';
-import { parseProject, editParagraph, toggleHighlight, defaults } from '../src/model';
+import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/model';
 
 describe('project persistence and precise highlights', () => {
   it('migrates without changing either independent snapshot', () => {
@@ -39,5 +39,22 @@ describe('project persistence and precise highlights', () => {
     project = editParagraph(project, 'p', 'new word changed');
     expect(project.highlights).toHaveLength(0);
     expect(project.warnings.join(' ')).toContain('高亮');
+  });
+  it('round-trips page breaks for maximum-length IDs, including JSON escapes', () => {
+    const paragraphId = '\u0001'.repeat(200);
+    const project = parseProject({ ...fixture, source: { paragraphs: [{ id: paragraphId, text: 'Article' }] }, highlights: [] });
+    project.layoutOverrides.manualPageBreaks = [layoutKey('article', paragraphId)];
+    expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
+    const legacyBreak = parseProject({ ...project, layoutOverrides: { manualPageBreaks: [paragraphId] } });
+    expect(parseProject(JSON.parse(JSON.stringify(legacyBreak)))).toEqual(legacyBreak);
+  });
+  it('migrates highlights with long source and hint IDs into persistable unique IDs', () => {
+    const project = parseProject({
+      ...fixture, source: { paragraphs: [{ id: 'p'.repeat(200), text: 'word word' }] },
+      highlights: [{ id: 'h'.repeat(200), text: 'word' }],
+    });
+    expect(project.highlights.map(mark => [mark.start, mark.end, mark.quote])).toEqual([[0, 4, 'word'], [5, 9, 'word']]);
+    expect(new Set(project.highlights.map(mark => mark.id)).size).toBe(2);
+    expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
   });
 });

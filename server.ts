@@ -16,6 +16,9 @@ app.post('/api/export', async (request, response) => {
   if (busy) { response.status(409).send('正在导出另一个项目，请稍后重试。'); return; }
   busy = true;
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
+  let result: Buffer | undefined;
+  let contentType = 'application/zip';
+  let failure = '';
   try {
     const project = parseProject(request.body.project);
     browser = await chromium.launch();
@@ -36,14 +39,18 @@ app.post('/api/export', async (request, response) => {
       files[`page-${String(index + 1).padStart(2, '0')}.png`] = png;
     }
     files['project.json'] = strToU8(JSON.stringify(project, null, 2));
-    const result = single ?? Buffer.from(zipSync(files));
-    await browser.close(); browser = undefined; busy = false;
-    response.type(single ? 'png' : 'application/zip').send(result);
+    result = single ?? Buffer.from(zipSync(files));
+    contentType = single ? 'png' : 'application/zip';
   } catch (reason) {
-    await browser?.close(); browser = undefined; busy = false;
-    response.status(400).type('text').send(`本地导出失败：${reason instanceof Error ? reason.message : String(reason)}`);
+    failure = `本地导出失败：${reason instanceof Error ? reason.message : String(reason)}`;
   }
-  finally { await browser?.close(); busy = false; }
+  finally {
+    try { await browser?.close(); }
+    catch (reason) { failure += `${failure ? '；' : '本地导出失败：'}浏览器清理失败：${reason instanceof Error ? reason.message : String(reason)}`; }
+    busy = false;
+  }
+  if (failure) response.status(400).type('text').send(failure);
+  else response.type(contentType).send(result);
 });
 if (process.argv.includes('--production')) {
   app.use(express.static(resolve(root, 'dist')));

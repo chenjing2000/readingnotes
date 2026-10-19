@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T03:58:40.273Z",
+  "generatedAt": "2026-10-19T11:41:52.534Z",
   "productionMode": true,
   "pageCount": 4,
   "dimensions": [
@@ -9,12 +9,12 @@
   "repeatIdentical": true,
   "previewIdentical": true,
   "externalRequests": [],
-  "protectedFilesVerifiedAgainstOriginalZip": 15,
+  "protectedFilesVerifiedAgainstOriginalZip": null,
   "hashes": {
     "page-01.png": "09d009bae920576c4f1985c011795049746b0714c4ec79db6787cb9af33f9c89",
     "page-02.png": "20527ef125583fa15b1fe9bc011890611423f1ff2a7a5dc1606b966d199422e1",
     "page-03.png": "46f0e446ef5befe60762c4a24e7650497dd0239b64f05b029b441b809a2cc89b",
     "page-04.png": "76f90258e9ca50e1ca380f5f711f9006423f1bc0bbfeb8422aa2ae153f55f210",
-    "project.json": "5a4d7387985ad701bc7e48bffd5e4bf1e4bd273bd27afef7e82354045921a945"
+    "project.json": "3cd971f00857e3dc9100a44d6ed183afd6482a2f2ab6b9e48dee64e13d7ab8a7"
   }
 }
