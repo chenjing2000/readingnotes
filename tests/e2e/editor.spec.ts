@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import fixture from '../../projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { unzipSync } from 'fflate';
 
 async function ready(page: Page) {
@@ -172,8 +172,8 @@ test('styles inherit, short content flows, breaks persist, exports match preview
   await page.setViewportSize({ width: 1800, height: 2000 });
   const screenshot = await page.locator('.card').first().screenshot();
   const { writeFile } = await import('node:fs/promises');
-  await writeFile('test-results/preview.png', screenshot);
-  await writeFile('test-results/export.png', files[pngNames[0]]);
+  await writeFile('artifacts/test-results/preview.png', screenshot);
+  await writeFile('artifacts/test-results/export.png', files[pngNames[0]]);
   expect(screenshot.equals(Buffer.from(files[pngNames[0]]))).toBe(true);
   const stale = await request.post('/api/export', { data: { ...snapshot, signature: 'stale' } });
   expect(stale.status()).toBe(400);

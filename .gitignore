@@ -6,14 +6,19 @@ node_modules/
 
 # Build output and tooling caches
 /dist/
+/artifacts/dist/
 /coverage/
+/artifacts/coverage/
 .vite/
 *.tsbuildinfo
 
 # Temporary browser tests and installation checks
 /test-results/
+/artifacts/test-results/
 /playwright-report/
+/artifacts/playwright-report/
 /blob-report/
+/artifacts/blob-report/
 /playwright/.cache/
 /.install-check/
 
@@ -37,4 +42,4 @@ Desktop.ini
 *.swo
 *~
 
-# Keep demo/, verification/, projects/, reference/ and package-lock.json tracked.
+# Keep artifacts/demo/, artifacts/verification/, assets/ and package-lock.json tracked.

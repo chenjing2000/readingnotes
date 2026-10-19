@@ -1,6 +1,6 @@
 import { beforeAll, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
-import fixture from '../projects/brainco/project.json';
+import fixture from '../assets/projects/brainco/project.json';
 
 const { launch, post } = vi.hoisted(() => ({ launch: vi.fn(), post: vi.fn() }));
 vi.mock('@playwright/test', () => ({ chromium: { launch } }));
@@ -14,7 +14,7 @@ let exportImages: (request: Request, response: Response) => Promise<void>;
 beforeAll(async () => {
   const args = process.argv;
   process.argv = [...args, '--production'];
-  try { await import('../server'); }
+  try { await import('../src/server/index'); }
   finally { process.argv = args; }
   exportImages = post.mock.calls.find(([path]) => path === '/api/export')![1];
 });

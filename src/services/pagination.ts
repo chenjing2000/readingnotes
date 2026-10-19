@@ -1,4 +1,4 @@
-import { layoutKey, type Project, type Styles } from './model';
+import { layoutKey, type Project, type Styles } from '../models/project';
 
 export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string }[] };
 export type Line = { block: Block; start: number; end: number; indent: boolean; height: number };

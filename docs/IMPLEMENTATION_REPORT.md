@@ -2,7 +2,7 @@
 
 > 本报告记录初次实现的历史验收；后续代码整理及最新验证结果见 [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)。原始交接 ZIP 对照结论仅适用于当时环境，不代表后续复验重新检查过该 ZIP。
 
-验收日期：2026-10-19（Asia/Shanghai）。实现位置：当前 handoff 目录。没有修改原始 `projects/brainco/` 与 `reference/v17/`；15 个文件已逐字节对照上级原始交接 ZIP。
+验收日期：2026-10-19（Asia/Shanghai）。实现位置：当前 handoff 目录。没有修改原始 `assets/projects/brainco/` 与 `assets/reference/v17/`；15 个文件已逐字节对照上级原始交接 ZIP。
 
 ## 结果
 
@@ -23,7 +23,7 @@
 | 阶段 | 完成项与证据 |
 |---|---|
 | Phase 1 骨架与数据 | React/TypeScript/Vite；Zod 校验与 v1→v2 迁移；BrainCo 两个完整英文自然段及两个完整译文段落；全部内容受控编辑；JSON 下载和重新导入；稳定 ID。`tests/model.test.ts` 对照独立 Markdown 快照。 |
-| Phase 2 分页 | 独立 `src/pagination.ts`；Range 在浏览器实际字体下逐 grapheme 测行，非按字数估高；逐行跨页；表达的四子节点独立流动；续段不缩进；区间连续性断言；两栏词汇；无 10 页截断。 |
+| Phase 2 分页 | 独立 `src/services/pagination.ts`；Range 在浏览器实际字体下逐 grapheme 测行，非按字数估高；逐行跨页；表达的四子节点独立流动；续段不缩进；区间连续性断言；两栏词汇；无 10 页截断。 |
 | Phase 3 编辑与导出 | 单处重点增删/局部取消；文字编辑后迁移高亮，受损引用取消并提示；会话历史 100 步；词汇/表达增删和上下排序；段落增删；预览点击定位；样式及恢复默认；手动前换页；本地字体；草稿隔离备份；单页 PNG 和整套 ZIP（含项目 JSON）。 |
 | Phase 4 验收 | 单元、浏览器、全新安装、构建、生产演示及全部页面图像比对；独立只读代码审查后补充回归；Windows 操作说明与本报告。 |
 
@@ -56,13 +56,13 @@ npm run demo
   protectedFilesVerifiedAgainstOriginalZip: 15
 ```
 
-机器可读结果：`verification/unit.json`、`verification/e2e.json`、`demo/validation.json`。PNG 和项目文件的 SHA-256 在 `demo/validation.json`。演示由生产构建运行生成，非引用旧 HTML 或旧 PNG。
+机器可读结果：`artifacts/verification/unit.json`、`artifacts/verification/e2e.json`、`artifacts/demo/validation.json`。PNG 和项目文件的 SHA-256 在 `artifacts/demo/validation.json`。演示由生产构建运行生成，非引用旧 HTML 或旧 PNG。
 
 安装过程中出现 npm 的 esbuild 安装脚本策略提示；平台二进制已安装，构建实际通过。普通构建曾出现上游 Zod 注释标记警告，浏览器测试有环境 `NO_COLOR` 提示；均非本项目测试失败。最终没有跳过或仍然失败的测试。
 
 ## 20 项验收逐条记录
 
-测试位置：`tests/model.test.ts`、`tests/e2e/editor.spec.ts`、`tests/e2e/pagination.spec.ts`；生产图像核对：`scripts/demo.ts`。
+测试位置：`tests/model.test.ts`、`tests/e2e/editor.spec.ts`、`tests/e2e/pagination.spec.ts`；生产图像核对：`tools/demo.ts`。
 
 | # | 优先级 | 结果 | 实际证据及边界 |
 |---|---|---|---|
@@ -138,11 +138,11 @@ npm.cmd start
 
 浏览器打开 `http://127.0.0.1:4317`。完整新装需先执行 `npm.cmd ci`、`npx.cmd playwright install chromium`、`npm.cmd run build`。
 
-- 实际编辑器截图：[demo/editor.png](demo/editor.png)
-- 新生成卡片：[第 1 页](demo/page-01.png)、[第 2 页](demo/page-02.png)、[第 3 页](demo/page-03.png)、[第 4 页](demo/page-04.png)
-- 原尺寸预览截图：`demo/preview-page-01.png` 至 `demo/preview-page-04.png`
-- 全套 PNG 与项目：[demo/reading-cards.zip](demo/reading-cards.zip)
-- 可重新导入的 v2 项目：[demo/project.json](demo/project.json)
-- 一致性证据：[demo/validation.json](demo/validation.json)
+- 实际编辑器截图：[artifacts/demo/editor.png](../artifacts/demo/editor.png)
+- 新生成卡片：[第 1 页](../artifacts/demo/page-01.png)、[第 2 页](../artifacts/demo/page-02.png)、[第 3 页](../artifacts/demo/page-03.png)、[第 4 页](../artifacts/demo/page-04.png)
+- 原尺寸预览截图：`artifacts/demo/preview-page-01.png` 至 `artifacts/demo/preview-page-04.png`
+- 全套 PNG 与项目：[artifacts/demo/reading-cards.zip](../artifacts/demo/reading-cards.zip)
+- 可重新导入的 v2 项目：[artifacts/demo/project.json](../artifacts/demo/project.json)
+- 一致性证据：[artifacts/demo/validation.json](../artifacts/demo/validation.json)
 
-![实际编辑器截图](demo/editor.png)
+![实际编辑器截图](../artifacts/demo/editor.png)

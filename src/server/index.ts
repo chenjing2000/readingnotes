@@ -3,9 +3,9 @@ import { chromium } from '@playwright/test';
 import { zipSync, strToU8 } from 'fflate';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseProject } from './src/model';
+import { parseProject } from '../models/project';
 
-const root = fileURLToPath(new URL('.', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const app = express();
 const port = Number(process.env.PORT ?? 4317);
 const baseURL = `http://127.0.0.1:${port}`;
@@ -53,11 +53,11 @@ app.post('/api/export', async (request, response) => {
   else response.type(contentType).send(result);
 });
 if (process.argv.includes('--production')) {
-  app.use(express.static(resolve(root, 'dist')));
-  app.get('/render', (_request, response) => response.sendFile(resolve(root, 'dist/index.html')));
+  app.use(express.static(resolve(root, 'artifacts/dist')));
+  app.get('/render', (_request, response) => response.sendFile(resolve(root, 'artifacts/dist/index.html')));
 } else {
   const { createServer } = await import('vite');
-  const vite = await createServer({ root, server: { middlewareMode: true, host: '127.0.0.1', hmr: false } });
+  const vite = await createServer({ root, configFile: resolve(root, 'tools/vite.config.ts'), server: { middlewareMode: true, host: '127.0.0.1', hmr: false } });
   app.use(vite.middlewares);
 }
 app.use((error: Error, _request: express.Request, response: express.Response, _next: express.NextFunction) => response.status(400).send(`请求失败：${error.message}`));

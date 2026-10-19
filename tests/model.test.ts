@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import fixture from '../projects/brainco/project.json';
-import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/model';
+import fixture from '../assets/projects/brainco/project.json';
+import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
 
 describe('project persistence and precise highlights', () => {
   it('migrates without changing either independent snapshot', () => {
     const project = parseProject(fixture);
     expect(project.schemaVersion).toBe(2);
     for (const [key, filename] of [['source', 'article'], ['translation', 'translation']] as const) {
-      const snapshot = readFileSync(`projects/brainco/${filename}.md`, 'utf8').replace(/\r\n/g, '\n').trim();
+      const snapshot = readFileSync(`assets/projects/brainco/${filename}.md`, 'utf8').replace(/\r\n/g, '\n').trim();
       expect(project[key].paragraphs.map(item => item.text).join('\n\n')).toBe(snapshot);
       expect(project[key].paragraphs).toHaveLength(2);
     }

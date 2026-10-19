@@ -1,6 +1,6 @@
 # Codex Handoff — 英语精读卡片可视化编辑器（MVP）
 
-> **执行指令**：请先阅读本文件、`specs/ACCEPTANCE.md`、`specs/DATA_AND_PAGINATION.md`，再分析 `reference/v17/preview.html` 和四张 PNG。然后按本文验收标准**实际实现、运行和测试**一个本地可视化编辑器，不要只输出架构建议或空壳 UI。遇到模糊细节优先采用最小、可维护的实现；只在会改变内容完整性或项目格式的地方提出阻断性问题。请保留原文准确性。
+> **执行指令**：请先阅读本文件、`docs/specs/ACCEPTANCE.md`、`docs/specs/DATA_AND_PAGINATION.md`，再分析 `assets/reference/v17/preview.html` 和四张 PNG。然后按本文验收标准**实际实现、运行和测试**一个本地可视化编辑器，不要只输出架构建议或空壳 UI。遇到模糊细节优先采用最小、可维护的实现；只在会改变内容完整性或项目格式的地方提出阻断性问题。请保留原文准确性。
 
 ## 1. 背景与目标
 
@@ -26,7 +26,7 @@
 
 ## 3. 范围（MVP 必须完成）
 
-1. **导入与编辑**：加载 `projects/brainco/project.json`；编辑英文标题、2 段英文原文、重点标注、词汇（增删改排序）、Useful Expressions（增删改排序）、Main Idea、中文译文（段落增删改）。可以在编辑面板修改；尽量支持在预览中点击文字定位/编辑。
+1. **导入与编辑**：加载 `assets/projects/brainco/project.json`；编辑英文标题、2 段英文原文、重点标注、词汇（增删改排序）、Useful Expressions（增删改排序）、Main Idea、中文译文（段落增删改）。可以在编辑面板修改；尽量支持在预览中点击文字定位/编辑。
 2. **预览**：全部页面列表、页码、缩放；无需一页页手动编辑生成的 HTML。切换内容自动重新流式分页。
 3. **样式**：可调英文正文、重点（默认继承正文）、标题、Useful Expressions 短语、中文译文的字号；行距、段距、边距；强调色与绿色分割线颜色。提供“恢复模板默认”。可选单元素覆写通过 `layoutOverrides` 存储。
 4. **结构化高亮**：选择英文原文片段，标注/取消重点；存储不能依赖导出 HTML 的 DOM offset。可用 paragraph ID + start/end + quote 校验，或可信赖的富文本 document model；处理后续文本编辑时的高亮迁移与失配提示。示例 JSON 的 `highlights[].text` 是 V17 迁移用**词组搜索提示**，不是未来精确定位的最终 schema。正式编辑器应支持一处文本单独标注，而非强制标注所有同词出现。
@@ -38,7 +38,7 @@
 
 ## 4. 视觉规范：以 V17 为视觉参考
 
-`reference/v17/preview.html` 与 `reference/v17/images/page-*.png` 是**视觉参考，不是可靠的内容数据库，也不是可复用的分页引擎**（历史版本中分页是手工拼接 HTML）。参考优先级：本 handoff 的行为规则 > 最新 fixture 结构内容 > V17 视觉细节。
+`assets/reference/v17/preview.html` 与 `assets/reference/v17/images/page-*.png` 是**视觉参考，不是可靠的内容数据库，也不是可复用的分页引擎**（历史版本中分页是手工拼接 HTML）。参考优先级：本 handoff 的行为规则 > 最新 fixture 结构内容 > V17 视觉细节。
 
 | 属性 | 默认值 |
 |---|---|
@@ -65,7 +65,7 @@
 
 ## 5. 数据、版面与正确性约束
 
-- 英文原文逐字符保真，除明确由用户确认的 OCR 清洗外，不能重写文章。`projects/brainco/article.md` 是原始输入的独立备份。
+- 英文原文逐字符保真，除明确由用户确认的 OCR 清洗外，不能重写文章。`assets/projects/brainco/article.md` 是原始输入的独立备份。
 - 翻译必须完整忠实，不准为了分页压缩成摘要；Main Idea 是独立一段摘要。
 - Vocabulary 词条：word（词典形）、pos、meaning、可选 British IPA；短语不用伪造 IPA。界面内部可使用稳定 ID 与任意编辑状态；对外用于 Vocabulary 的 JSON 保持兼容词头/词性/释义/音标四项语义。
 - 字词高亮与是否进入词汇表可独立编辑；同词大小写/单复数/词形匹配属于自动初始化逻辑，不限制人工覆写。
@@ -82,7 +82,7 @@
 - 项目代码 + package.json 锁文件 + 独立分页模块及其测试。
 - 可导入的 BrainCo 完整样例项目；保留附件中的原始样例和参考图，不修改它们。
 - 从编辑器实际生成的一份 demo PNG 集合和 ZIP。
-- 测试报告 `IMPLEMENTATION_REPORT.md`，包括完成项、未完成项、验收截图、已知限制、运行命令和下一步建议。
+- 测试报告 `docs/IMPLEMENTATION_REPORT.md`，包括完成项、未完成项、验收截图、已知限制、运行命令和下一步建议。
 
 ## 7. 开发顺序（逐阶段完成并自测）
 
@@ -92,6 +92,6 @@
 
 **Phase 3｜可视化编辑与导出**：编辑器控件、文本高亮、撤销/重做、手动分页标记、样式面板、稳定导出、离线运行。
 
-**Phase 4｜验收**：执行 `specs/ACCEPTANCE.md`；与 V17 参考图比对，解释合理差异，列出还未实现的功能。不要用只修改参考 HTML 生成静态页面的方式冒充完成。
+**Phase 4｜验收**：执行 `docs/specs/ACCEPTANCE.md`；与 V17 参考图比对，解释合理差异，列出还未实现的功能。不要用只修改参考 HTML 生成静态页面的方式冒充完成。
 
 > 请开始编码，做到 MVP 能实际运行。发现高风险技术难点时优先做最小可运行纵切验证（尤其是 DOM 实测行级分页和 Playwright 导出），然后再展开其余功能。不能通过测试时如实报告，禁止虚构功能或测试通过记录。

@@ -4,10 +4,10 @@ import '@fontsource/nunito-sans/400.css';
 import '@fontsource/nunito-sans/800.css';
 import '@fontsource/noto-sans-sc/400.css';
 import '@fontsource/noto-sans-sc/700.css';
-import './style.css';
-import App from './App';
-import { paginate } from './pagination';
-import { parseProject, type Project } from './model';
+import './views/editor.css';
+import EditorView from './views/EditorView';
+import { paginate } from './services/pagination';
+import { parseProject, type Project } from './models/project';
 
 declare global {
   interface Window {
@@ -22,4 +22,4 @@ if (location.pathname === '/render') {
     document.getElementById('root')!.replaceChildren(...result.pages);
     return result.signature;
   };
-} else createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
+} else createRoot(document.getElementById('root')!).render(<React.StrictMode><EditorView /></React.StrictMode>);

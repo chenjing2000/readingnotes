@@ -5,12 +5,12 @@
   "type": "module",
   "engines": { "node": ">=22.12" },
   "scripts": {
-    "dev": "tsx server.ts",
-    "start": "tsx server.ts --production",
-    "build": "tsc --noEmit && vite build",
-    "test": "vitest run",
-    "test:e2e": "playwright test",
-    "demo": "tsx scripts/demo.ts"
+    "dev": "tsx src/server/index.ts",
+    "start": "tsx src/server/index.ts --production",
+    "build": "tsc --noEmit && vite build --config tools/vite.config.ts",
+    "test": "vitest run --config tools/vite.config.ts",
+    "test:e2e": "playwright test --config tools/playwright.config.ts",
+    "demo": "tsx tools/demo.ts"
   },
   "dependencies": {
     "@fontsource/nunito-sans": "^5.2.0",

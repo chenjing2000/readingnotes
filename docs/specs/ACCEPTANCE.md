@@ -4,7 +4,7 @@
 
 ## A. 内容与持久化
 
-1. 导入 `projects/brainco/project.json`，文章恰有 2 个真实自然段；全部原文字符顺序与 `article.md` 一致（不计换行规范化）；中文译文也恰有 2 段，完整保留全部语义。
+1. 导入 `assets/projects/brainco/project.json`，文章恰有 2 个真实自然段；全部原文字符顺序与 `article.md` 一致（不计换行规范化）；中文译文也恰有 2 段，完整保留全部语义。
 2. 修改第二段中 `supposedly` 前后文字，保存项目到 JSON，关闭并重新加载，改动仍存在；可撤销/重做。
 3. 在英文原文中选中并加亮一个词组，取消一次，确认显示及存储同步；人工取消其中一处的高亮不应误取消另一处同词高亮。
 4. Vocabulary 增删改及拖动/排序；Useful Expressions 修改其英文例句和中文译文；Main Idea 改写；保存重载保持一致。

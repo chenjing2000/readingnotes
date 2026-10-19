@@ -1,6 +1,8 @@
 # 英语精读编辑器实施计划
 
-依据：HANDOFF.md、specs/ACCEPTANCE.md、specs/DATA_AND_PAGINATION.md。用户已要求直接实施，设计不重新审批；当前目录没有既有代码或 Git 仓库，不建分支、不提交。
+> 本文是初次交接时的历史实施计划。下述“没有既有代码或 Git 仓库”等环境说明仅适用于当时；当前启动方法与目录以 [README](../README.md) 为准。
+
+依据：HANDOFF.md、docs/specs/ACCEPTANCE.md、docs/specs/DATA_AND_PAGINATION.md。用户已要求直接实施，设计不重新审批；当前目录没有既有代码或 Git 仓库，不建分支、不提交。
 
 架构：React/TypeScript/Vite 编辑器，Zod 版本化 JSON；独立 DOM Range 实测行模块输出稳定 sourceId/start/end 片段；预览与本地 Playwright PNG 导出共用同一渲染器。Node 仅监听 127.0.0.1，不上传文章。字体随 npm 包本地提供。
 

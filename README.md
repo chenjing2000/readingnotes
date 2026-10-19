@@ -2,6 +2,35 @@
 
 Windows 本地运行的 React / TypeScript 编辑器：完整内容编辑、结构化 JSON、逐行自动分页、实时预览和 Chromium PNG / ZIP 导出。无账号、数据库或大模型 API；首次安装后可断开外网使用。
 
+## 目录结构
+
+| 目录 | 用途 |
+|---|---|
+| `src/` | 按 MVVM 分层的编辑器、公共服务及本机服务 |
+| `tests/` | 单元测试与浏览器回归测试 |
+| `tools/` | Vite / Playwright 配置和演示生成脚本 |
+| `docs/` | 交接说明、实施计划、验收规范、审查报告与 skill |
+| `assets/` | `projects/` 原始样例和 `reference/` 参考资料 |
+| `artifacts/` | `dist/` 生产构建、`demo/` 演示文件、`verification/` 验证报告；测试临时目录也集中于此 |
+
+根目录仅保留 README、npm 清单与锁文件、TypeScript 配置、HTML 入口和 Git 忽略规则。`node_modules/` 由 npm 管理。下文代码路径均相对于项目根目录；常用 npm 命令不变。
+
+源码按以下职责组织，React 自定义 Hook 承担 ViewModel，不引入额外 MVVM 框架：
+
+```text
+src/
+  models/project.ts                 数据结构、校验、迁移和高亮规则
+  viewmodels/useEditorViewModel.ts   编辑状态、撤销重做和操作命令
+  views/EditorView.tsx               界面与命令绑定、焦点、预览挂载
+  views/editor.css                  界面和卡片样式
+  services/pagination.ts            字体测量、分页及渲染片段
+  services/projectIO.ts             草稿、JSON 文件和导出请求
+  server/index.ts                   本机 HTTP 服务与 Chromium 截图
+  main.tsx                          应用及导出渲染入口
+```
+
+View 通过 ViewModel 执行编辑命令，ViewModel 调用 Model 与 Services；浏览器存储、文件读取和网络请求集中在 Services。分页仍使用原 DOM 实测引擎，View 只负责把返回的页面片段挂到预览容器。
+
 ## Windows 首次安装与运行
 
 先安装 Node.js 24，或至少 Node.js 22.12。本次实际验证环境为 Windows、Node 24.19.0、npm 11.17.0。
@@ -23,7 +52,7 @@ npm.cmd start
 
 ## 编辑、保存、重新打开
 
-1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `projects/brainco/project.json` 或自己保存的项目。旧版 schema 1 自动迁移为 schema 2；原始附件不被改写。
+1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `assets/projects/brainco/project.json` 或自己保存的项目。旧版 schema 1 自动迁移为 schema 2；原始附件不被改写。
 2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇和表达支持添加、删除及上下排序。英文与中文段落可添加、删除；空译文段落会保留并提示。
 3. 在英文编辑框选中一处文字，点“标注 / 取消所选重点”。取消只影响选区；原文改动会迁移未受影响的范围，涉及高亮原文的替换会取消该处高亮并提示重新确认。
 4. 点击预览文字，可定位到对应编辑字段。预览本身不是直接输入区域。
@@ -52,17 +81,19 @@ npm.cmd run build
 npm.cmd run demo
 ```
 
-E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手动启动的编辑器，以确保测试使用当前代码。`demo` 使用生产构建及独立 4318 端口，生成 `demo/editor.png`、`demo/page-01.png` 等、`demo/reading-cards.zip` 和 `demo/validation.json`，实际检查尺寸、重复导出及预览一致性。
+E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手动启动的编辑器，以确保测试使用当前代码。`demo` 使用生产构建及独立 4318 端口，生成 `artifacts/demo/editor.png`、`artifacts/demo/page-01.png` 等、`artifacts/demo/reading-cards.zip` 和 `artifacts/demo/validation.json`，实际检查尺寸、重复导出及预览一致性。
 
-初次实现的 20 项验收说明见 [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md)；后续整理及最新复验结果见 [CODE_REVIEW_REPORT.md](CODE_REVIEW_REPORT.md)。可直接打开 [已生成的演示 ZIP](demo/reading-cards.zip) 和 [实际编辑器截图](demo/editor.png)。
+初次实现的 20 项验收说明见 [IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md)；后续整理及最新复验结果见 [CODE_REVIEW_REPORT.md](docs/CODE_REVIEW_REPORT.md)。可直接打开 [已生成的演示 ZIP](artifacts/demo/reading-cards.zip) 和 [实际编辑器截图](artifacts/demo/editor.png)。
 
 ## 文件与数据格式
 
-- `src/model.ts`：Zod 校验、schema 迁移、精确高亮及文本编辑映射。
-- `src/pagination.ts`：独立 DOM Range / grapheme 行测量、流式分页及覆盖连续性断言；`tests/e2e/pagination.spec.ts` 在真实浏览器测试。
-- `src/App.tsx`：编辑表单、历史、草稿、JSON 下载、预览导航。
-- `server.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
-- `projects/brainco/` 与 `reference/v17/` 保留原始内容。`demo/project.json` 是可继续导入编辑的 schema 2 样例。
+- `src/models/project.ts`：Zod 校验、schema 迁移、精确高亮及文本编辑映射。
+- `src/services/pagination.ts`：独立 DOM Range / grapheme 行测量、流式分页及覆盖连续性断言；`tests/e2e/pagination.spec.ts` 在真实浏览器测试。
+- `src/views/EditorView.tsx`：编辑表单、命令绑定、预览导航与 DOM 挂载。
+- `src/viewmodels/useEditorViewModel.ts`：编辑状态、历史、保存与导出命令、分页调度。
+- `src/services/projectIO.ts`：本机草稿恢复、隔离与写入、JSON 读取、下载和导出请求。
+- `src/server/index.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
+- `assets/projects/brainco/` 与 `assets/reference/v17/` 保留原始内容。`artifacts/demo/project.json` 是可继续导入编辑的 schema 2 样例。
 - schema 2 的精确重点存为 `{id, paragraphId, start, end, quote}`，区间单位为 JavaScript UTF-16 code unit，`end` 不包含端点；保存/加载校验 quote。
 - schema 1 迁移时为每处高亮生成 UUID，保存后保留该 ID；原附件不改写。手动分页键单独允许最长 2048 字符，以容纳最长 200 字符业务 ID 的 JSON 转义及节点类型。
 - 全局样式在 `styles`；手动分页在 `layoutOverrides.manualPageBreaks`，采用 `JSON.stringify([kind, sourceId])` 的字符串键隔离业务 ID。旧的裸 ID 会迁移。`elementStyles` 仅保留数据，当前不应用单元素覆写。

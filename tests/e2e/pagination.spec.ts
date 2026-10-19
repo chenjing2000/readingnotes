@@ -1,8 +1,8 @@
 import { test, expect, chromium } from '@playwright/test';
 import { mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import fixture from '../../projects/brainco/project.json' with { type: 'json' };
-import { parseProject } from '../../src/model';
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import { parseProject } from '../../src/models/project';
 
 test('phrase can finish a page while its meaning and example continue on next', async ({ page }) => {
   await page.goto('/render');
@@ -85,7 +85,7 @@ test('missing fonts stop pagination with a recoverable message, without disablin
 });
 
 test('draft survives a real Chromium process restart', async () => {
-  const directory = await mkdtemp(resolve('test-results/profile-'));
+  const directory = await mkdtemp(resolve('artifacts/test-results/profile-'));
   let context = await chromium.launchPersistentContext(directory, { headless: true });
   try {
     let page = await context.newPage();

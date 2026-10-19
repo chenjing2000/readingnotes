@@ -5,10 +5,12 @@ import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { setTimeout } from 'node:timers/promises';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const output = resolve('demo');
+const root = fileURLToPath(new URL('..', import.meta.url));
+const output = resolve(root, 'artifacts/demo');
 await mkdir(output, { recursive: true });
-const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'server.ts', '--production'], { env: { ...process.env, PORT: '4318' }, stdio: 'pipe', windowsHide: true });
+const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts', '--production'], { cwd: root, env: { ...process.env, PORT: '4318' }, stdio: 'pipe', windowsHide: true });
 let serverLog = '';
 server.stdout.on('data', chunk => { serverLog += String(chunk); }); server.stderr.on('data', chunk => { serverLog += String(chunk); });
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
@@ -59,12 +61,12 @@ try {
   }
   let protectedFiles: number | null = null;
   try {
-    const original = unzipSync(await readFile('../english-reading-editor-handoff.zip'));
+    const original = unzipSync(await readFile(resolve(root, '../english-reading-editor-handoff.zip')));
     protectedFiles = 0;
     for (const [name, bytes] of Object.entries(original)) {
       const clean = name.replace(/^english-reading-editor-handoff\//, '');
       if (!(clean.startsWith('projects/') || clean.startsWith('reference/')) || clean.endsWith('/')) continue;
-      if (!Buffer.from(bytes).equals(await readFile(clean))) throw new Error(`原始参考文件被修改：${clean}`);
+      if (!Buffer.from(bytes).equals(await readFile(resolve(root, 'assets', clean)))) throw new Error(`原始参考文件被修改：${clean}`);
       protectedFiles++;
     }
   } catch (reason) { if ((reason as NodeJS.ErrnoException).code !== 'ENOENT') throw reason; }

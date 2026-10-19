@@ -2,6 +2,8 @@
 
 日期：2026-10-19（Asia/Shanghai）。基线：`54fb9a9`，当前分支：`main`。
 
+> 前述代码审查对应提交 `7855073`；文中资源路径已随目录归类调整。后续目录整理的复验见文末。
+
 ## 审查范围与结论
 
 检查了数据校验与迁移、React 编辑/历史/草稿、DOM 分页与字体测量、本机导出服务、构建配置、单元/E2E 测试、演示脚本及相关文档。现有模型、分页、界面、服务的职责划分可保留，无需新增架构层或依赖。独立只读代码复核未发现新的必改问题。
@@ -22,32 +24,47 @@
 - E2E 禁止复用已存在的 4317 服务，避免误测旧代码；端口占用时应先停止手动服务。
 - 修正 README 的过期工作目录及样式面板的即时应用提示。
 - 区分初次实现的历史验收、原始设计建议与本次复验，避免将尚未实现的建议当成现有功能。
-- 更新 `verification/` 的实际结果和 `demo/` 的生产演示；四页 PNG 本身与基线无 Git 差异。
+- 更新 `artifacts/verification/` 的实际结果和 `artifacts/demo/` 的生产演示；四页 PNG 本身与基线无 Git 差异。
 
 ## 清理与保留
 
-没有删除项目源文件、参考资料、配置或用户数据，也没有发现应删除的已跟踪废弃文件。仅清理本次测试生成的 `test-results/` 临时截图与浏览器配置。已有 `.gitignore` 已覆盖依赖、构建输出和测试临时目录，无需增加规则。保留本地构建与依赖，便于直接运行。
+没有删除项目源文件、参考资料、配置或用户数据，也没有发现应删除的已跟踪废弃文件。仅清理本次测试生成的 `artifacts/test-results/` 临时截图与浏览器配置。已有 `.gitignore` 已覆盖依赖、构建输出和测试临时目录，无需增加规则。保留本地构建与依赖，便于直接运行。
 
-开始任务时已有未跟踪的 `docs/`（含用户指定 skill），保持原样且不纳入本次提交。`projects/`、`reference/`、依赖清单和锁文件均无 Git 差异。
+开始任务时已有未跟踪的 `docs/`（含用户指定 skill），保持原样且不纳入本次提交。`assets/projects/`、`assets/reference/`、依赖清单和锁文件均无 Git 差异。
 
 ## 验证结果
 
 | 检查 | 结果与证据 |
 |---|---|
 | 依赖安装 | `npm.cmd ci --no-audit --no-fund --fetch-retries=0 --fetch-timeout=20000`，成功安装 185 包。 |
-| 单元测试 | `npm.cmd test -- --reporter=default --reporter=json --outputFile=verification/unit.json`，2 文件、8/8 通过；涵盖长 ID 往返、迁移、关闭失败与锁恢复。 |
+| 单元测试 | `npm.cmd test -- --reporter=default --reporter=json --outputFile=artifacts/verification/unit.json`，2 文件、8/8 通过；涵盖长 ID 往返、迁移、关闭失败与锁恢复。 |
 | 浏览器回归 | `npm.cmd run test:e2e`，真实 Chromium 13/13 通过；涵盖编辑保存、草稿重启、极端分页、字体失败、误启用导出及图片一致性。 |
 | 静态检查与构建 | `npm.cmd run build -- --logLevel warn`，包含 `tsc --noEmit`，退出 0。 |
-| 生产导出 | `npm.cmd run demo`，4 页 1200×1600；全部预览与导出 PNG 逐字节相同，重复导出逐字节相同，无外部资源请求。见 `demo/validation.json`。 |
+| 生产导出 | `npm.cmd run demo`，4 页 1200×1600；全部预览与导出 PNG 逐字节相同，重复导出逐字节相同，无外部资源请求。见 `artifacts/demo/validation.json`。 |
 | 视觉抽查 | 实际打开编辑器截图及第 4 页 PNG，文字和页脚可见，无明显裁切。 |
 | 差异检查 | `git diff --check` 通过；原始项目与参考资源未改动。 |
 
 ## 验证边界与保留问题
 
-本次结果限于 Windows 与安装的 Chromium，未覆盖其他浏览器/系统的全部字体和像素差异。上级原始交接 ZIP 在本次环境中不存在，未重复验证历史报告中的 ZIP 逐字节对照；`demo/validation.json` 对应字段明确为 null。
+本次结果限于 Windows 与安装的 Chromium，未覆盖其他浏览器/系统的全部字体和像素差异。上级原始交接 ZIP 在本次环境中不存在，未重复验证历史报告中的 ZIP 逐字节对照；`artifacts/demo/validation.json` 对应字段明确为 null。
 
 构建仍有上游 Zod PURE 注释警告，E2E 有环境颜色变量警告；安装时有 esbuild 安装脚本策略提示，但构建与测试均实际通过，未更改依赖或屏蔽警告。超大项目主线程分页性能、孤行优化、Markdown 导出、单元素样式和安装包仍为原有边界，本次未扩展功能。
 
 ## Git 提交范围
 
 仅提交本次代码、回归测试、相关说明和更新后的验证/演示产物。验证通过后提交至现有 `main` 并正常推送 `origin/main`，不切换、合并或强制推送；确切提交号以本次交付消息及 `git log -1` 为准。
+
+## 后续目录归类与复验
+
+按用户要求将根目录从 25 项归并为 14 项（均含隐藏项），程序功能与 npm 命令保持不变：
+
+- 服务入口移至 `src/server/index.ts`；构建配置、浏览器测试配置与演示脚本集中到 `tools/`。
+- 交接、计划、报告及规范集中到 `docs/`，原有 `docs/skills/` 不改动。
+- 样例项目和参考资料集中到 `assets/`；15 个原始资料文件移动前后 SHA-256 全部一致。
+- 构建、演示、验证报告及测试临时文件集中到 `artifacts/`；同步调整导入、服务根路径、文档链接及忽略规则，没有删除资料。
+
+本轮重新执行单元测试 8/8、真实 Chromium E2E 13/13、TypeScript + Vite 构建及生产演示，均通过。生产导出仍为 4 页 1200×1600，每页与预览和重复导出逐字节一致。原有 Zod 注释及环境颜色变量警告仍存在。
+
+用户进一步要求按 MVVM 整理后，将原 App 的状态和编辑命令提取到 `src/viewmodels/useEditorViewModel.ts`，原 JSX 和焦点/缩放交互保留在 `src/views/EditorView.tsx`；数据规则归入 `src/models/project.ts`，分页与浏览器 IO 归入 `src/services/`，Node 服务单列于 `src/server/`。前端以 React Hook 实现 ViewModel，未引入依赖注入、事件总线或额外状态框架。样式归入 Views，根目录条目数量保持 14 项。
+
+MVVM 拆分后再次执行上述单元、E2E、构建与生产演示检查，结果仍为 8/8、13/13、构建成功及 4 页图片逐字节一致；独立只读复核未发现新的问题。Model 与样式内容不变，分页服务仅调整导入路径。
