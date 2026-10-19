@@ -20,10 +20,10 @@ test('four-column vocabulary table edits and moves the selected row, inserts bel
   const down = actions.getByRole('button', { name: '下移选中词汇', exact: true });
   const remove = actions.getByRole('button', { name: '删除选中词汇', exact: true });
   const add = actions.getByRole('button', { name: '在选中词汇下方添加空白行', exact: true });
-  const words = table.locator('textarea[aria-label^="词头 "]');
+  const words = table.locator('input[aria-label^="词头 "]');
   const selected = table.locator('tbody tr[aria-selected="true"]');
   async function expectWords(expected: string[]) {
-    await expect.poll(() => words.evaluateAll(nodes => nodes.map(node => (node as HTMLTextAreaElement).value))).toEqual(expected);
+    await expect.poll(() => words.evaluateAll(nodes => nodes.map(node => (node as HTMLInputElement).value))).toEqual(expected);
   }
   await expect(up).toBeDisabled();
   await page.getByLabel('词头 2', { exact: true }).fill('edited beta');

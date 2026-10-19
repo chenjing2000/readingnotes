@@ -24,6 +24,7 @@ src/
   views/EditorView.tsx               界面与命令绑定、焦点、预览挂载
   views/VocabularyTable.tsx          四列词汇表及选中行操作
   views/SplitPane.tsx                可拖动和键盘调节的左右分隔线
+  views/AutoSizeTextarea.tsx         表达输入按内容、字体与栏宽适应高度
   views/editor.css                  界面和卡片样式
   services/pagination.ts            字体测量、分页及渲染片段
   services/projectIO.ts             草稿、JSON 文件和导出请求
@@ -55,7 +56,7 @@ npm.cmd start
 ## 编辑、保存、重新打开
 
 1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `assets/projects/brainco/project.json` 或自己保存的项目。旧版 schema 1 自动迁移为 schema 2；原始附件不被改写。
-2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇页使用“词头 / 音标 / 词性 / 含义”四列表格，一词一行。点击或编辑单元格选中该行，下方 `↑ / ↓ / × / +` 分别上移、下移、删除及在选中行下方插入空白行；插入后自动选中新行并聚焦词头，空表也可用 `+` 建立第一行。表达页每条内容使用四行两列表格，题头依次为“短语 / 含义 / 例句 / 翻译”，支持添加、删除及上下排序。英文与中文段落可添加、删除；空译文段落会保留并提示。
+2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇页使用“词头 / 音标 / 词性 / 含义”四列表格，一词一行；各单元格采用不可拉伸的单行输入框，长内容可在框内横向查看。点击或编辑单元格选中该行，下方 `↑ / ↓ / × / +` 分别上移、下移、删除及在选中行下方插入空白行；插入后自动选中新行并聚焦词头，空表也可用 `+` 建立第一行。表达页每条内容使用四行两列表格，题头依次为“短语 / 含义 / 例句 / 翻译”，输入框按实际文字与栏宽自动调整高度，支持添加、删除及上下排序。两种表格的题头和内容均垂直居中。英文与中文段落可添加、删除；空译文段落会保留并提示。
 3. 在英文编辑框选中一处文字，点“标注 / 取消所选重点”。取消只影响选区；原文改动会迁移未受影响的范围，涉及高亮原文的替换会取消该处高亮并提示重新确认。
 4. 点击预览文字，可定位到对应编辑字段。预览本身不是直接输入区域。
 5. “样式”调整标题、英文正文、表达短语、中文字号、英/中行距、段距、边距和颜色。“恢复模板默认”可撤销。重点字号继承正文。
@@ -85,7 +86,7 @@ npm.cmd run build
 npm.cmd run demo
 ```
 
-E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手动启动的编辑器，以确保测试使用当前代码。`demo` 使用生产构建及独立 4318 端口，生成 `artifacts/demo/editor.png`、`artifacts/demo/page-01.png` 等、`artifacts/demo/reading-cards.zip` 和 `artifacts/demo/validation.json`，实际检查尺寸、重复导出及预览一致性。
+E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已运行的服务。若手动编辑器正在使用该端口，可在独立测试终端执行 `$env:PORT='4321'; npm.cmd run test:e2e`，保留原有服务。`demo` 使用生产构建及独立 4318 端口，生成 `artifacts/demo/editor.png`、`artifacts/demo/page-01.png` 等、`artifacts/demo/reading-cards.zip` 和 `artifacts/demo/validation.json`，实际检查尺寸、重复导出及预览一致性。
 
 初次实现的 20 项验收说明见 [IMPLEMENTATION_REPORT.md](docs/IMPLEMENTATION_REPORT.md)；后续整理及最新复验结果见 [CODE_REVIEW_REPORT.md](docs/CODE_REVIEW_REPORT.md)。可直接打开 [已生成的演示 ZIP](artifacts/demo/reading-cards.zip) 和 [实际编辑器截图](artifacts/demo/editor.png)。
 
@@ -108,7 +109,7 @@ E2E 会自动启动 4317 端口服务并使用真实 Chromium。请先停止手�
 
 - **字体错误**：保存 JSON 后重新执行 `npm.cmd ci`、`npm.cmd run build`，重启服务并刷新。字体未就绪时不会截图。
 - **Chromium 缺失**：执行 `npx.cmd playwright install chromium`。不要执行浏览器缓存清理后直接导出。
-- **端口被占用**：关闭旧服务。自定义端口可用 `$env:PORT='4320'; npm.cmd start`，随后打开对应地址；E2E 固定使用 4317。
+- **端口被占用**：自定义端口可用 `$env:PORT='4320'; npm.cmd start`，随后打开对应地址；E2E 同样读取 `PORT`，未设置时使用 4317。
 - **npm/浏览器安装失败**：首次安装需要访问 npm 与 Playwright 下载地址；检查本机代理。无需更改项目代码或关闭数据校验。
 - **导出失败**：先等分页完成；确认用 Chromium 系浏览器。错误信息会保留，编辑内容和 JSON 保存仍可用。
 - **大型项目**：单字段最多 300000 字符，导出请求上限 5MB；过大的 JSON 会明确拒绝。分页为主线程测量，超大项目可能短暂阻塞界面。

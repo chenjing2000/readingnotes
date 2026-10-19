@@ -9,8 +9,8 @@ type Props = {
 
 export default function VocabularyTable({ viewModel: vm, registerInput, focusField }: Props) {
   const { project, selectedVocabulary, selectedVocabularyIndex } = vm;
-  function editor(entry: Project['vocabulary'][number], index: number, property: 'word' | 'ipa' | 'meaning', label: string) {
-    return <textarea aria-label={`${label} ${index + 1}`} rows={2} value={entry[property] ?? ''}
+  function editor(entry: Project['vocabulary'][number], index: number, property: 'word' | 'ipa' | 'pos' | 'meaning', label: string) {
+    return <input type="text" aria-label={`${label} ${index + 1}`} value={entry[property] ?? ''}
       ref={input => registerInput(`vocabulary:${entry.id}:${property}`, input)}
       onChange={event => vm.setEntryField('vocabulary', entry.id, property, event.target.value)} />;
   }
@@ -22,9 +22,7 @@ export default function VocabularyTable({ viewModel: vm, registerInput, focusFie
         onClick={() => vm.selectVocabulary(entry.id)} onFocus={() => vm.selectVocabulary(entry.id)}>
         <td>{editor(entry, index, 'word', '词头')}</td>
         <td>{editor(entry, index, 'ipa', '音标')}</td>
-        <td><input className="vocabulary-pos" aria-label={`词性 ${index + 1}`} placeholder="词性" value={entry.pos}
-          ref={input => registerInput(`vocabulary:${entry.id}:pos`, input)}
-          onChange={event => vm.setEntryField('vocabulary', entry.id, 'pos', event.target.value)} /></td>
+        <td>{editor(entry, index, 'pos', '词性')}</td>
         <td>{editor(entry, index, 'meaning', '含义')}</td>
       </tr>)}</tbody>
     </table>{!project.vocabulary.length && <p className="hint">暂无词汇，点击下方加号添加。</p>}</div>

@@ -3,6 +3,7 @@ import { layoutKey, type Styles } from '../models/project';
 import { useEditorViewModel } from '../viewmodels/useEditorViewModel';
 import VocabularyTable from './VocabularyTable';
 import SplitPane from './SplitPane';
+import AutoSizeTextarea from './AutoSizeTextarea';
 
 type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
@@ -49,10 +50,10 @@ export default function EditorView() {
     return <>{project[key].map((entry, index) => <section className="edit-entry" key={entry.id}>
       <div className="entry-toolbar"><b>{name} {index + 1}</b><span className="spacer" /><button aria-label={`${name} ${index + 1} 上移`} disabled={index === 0} onClick={() => vm.reorder(key, index, -1)}>↑</button><button aria-label={`${name} ${index + 1} 下移`} disabled={index === project[key].length - 1} onClick={() => vm.reorder(key, index, 1)}>↓</button><button aria-label={`删除${name} ${index + 1}`} onClick={() => vm.removeEntry(key, entry.id)}>删除</button></div>
       <table className="expression-table" aria-label={`表达 ${index + 1}`}><tbody>{Object.entries(labels).map(([property, label]) =>
-        <tr key={property}><th scope="row">{label}</th><td><textarea aria-label={`${label} ${index + 1}`} rows={property === 'example' || property === 'exampleTranslation' ? 3 : 2}
+        <tr key={property}><th scope="row">{label}</th><td><AutoSizeTextarea label={`${label} ${index + 1}`}
           value={entry[property as keyof typeof labels]}
-          ref={input => { const id = `${key}:${entry.id}:${property}`; if (input) inputs.current.set(id, input); else inputs.current.delete(id); }}
-          onChange={event => vm.setEntryField(key, entry.id, property, event.target.value)} /></td></tr>
+          inputRef={input => { const id = `${key}:${entry.id}:${property}`; if (input) inputs.current.set(id, input); else inputs.current.delete(id); }}
+          onChange={value => vm.setEntryField(key, entry.id, property, value)} /></td></tr>
       )}</tbody></table>
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
