@@ -1,0 +1,40 @@
+# Dependencies and package-manager caches
+node_modules/
+.npm-cache/
+.pnpm-store/
+.yarn/cache/
+
+# Build output and tooling caches
+/dist/
+/coverage/
+.vite/
+*.tsbuildinfo
+
+# Temporary browser tests and installation checks
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/.install-check/
+
+# Local environment and secrets; keep shareable examples
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
+
+# Runtime logs
+*.log
+*.log.*
+
+# OS and editor temporary files
+.DS_Store
+Thumbs.db
+Desktop.ini
+~$*
+*.swp
+*.swo
+*~
+
+# Keep demo/, verification/, projects/, reference/ and package-lock.json tracked.
