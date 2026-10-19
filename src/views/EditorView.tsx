@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { layoutKey, type Styles } from '../models/project';
 import { useEditorViewModel } from '../viewmodels/useEditorViewModel';
 import VocabularyTable from './VocabularyTable';
+import SplitPane from './SplitPane';
 
 type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
@@ -44,10 +45,15 @@ export default function EditorView() {
   function expressions() {
     const key = 'expressions';
     const name = '表达';
-    const labels = { phrase: '短语', meaning: '中文含义', example: '例句', exampleTranslation: '例句译文' };
+    const labels = { phrase: '短语', meaning: '含义', example: '例句', exampleTranslation: '翻译' };
     return <>{project[key].map((entry, index) => <section className="edit-entry" key={entry.id}>
       <div className="entry-toolbar"><b>{name} {index + 1}</b><span className="spacer" /><button aria-label={`${name} ${index + 1} 上移`} disabled={index === 0} onClick={() => vm.reorder(key, index, -1)}>↑</button><button aria-label={`${name} ${index + 1} 下移`} disabled={index === project[key].length - 1} onClick={() => vm.reorder(key, index, 1)}>↓</button><button aria-label={`删除${name} ${index + 1}`} onClick={() => vm.removeEntry(key, entry.id)}>删除</button></div>
-      {Object.entries(labels).map(([property, label]) => field(`${label} ${index + 1}`, (entry as unknown as Record<string, string>)[property] ?? '', value => vm.setEntryField(key, entry.id, property, value), `${key}:${entry.id}:${property}`))}
+      <table className="expression-table" aria-label={`表达 ${index + 1}`}><tbody>{Object.entries(labels).map(([property, label]) =>
+        <tr key={property}><th scope="row">{label}</th><td><textarea aria-label={`${label} ${index + 1}`} rows={property === 'example' || property === 'exampleTranslation' ? 3 : 2}
+          value={entry[property as keyof typeof labels]}
+          ref={input => { const id = `${key}:${entry.id}:${property}`; if (input) inputs.current.set(id, input); else inputs.current.delete(id); }}
+          onChange={event => vm.setEntryField(key, entry.id, property, event.target.value)} /></td></tr>
+      )}</tbody></table>
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
@@ -62,7 +68,7 @@ export default function EditorView() {
     </header>
     <div className="status-bar"><span>{cacheStatus}</span><span>{!hasFileChanges ? 'JSON 下载已发起 / 项目已打开' : 'JSON 尚有未另存改动'}</span><span className="spacer" /><span>{ready ? `${pages} 页 · 排版就绪` : '正在测量字体与分页…'}</span></div>
     {error && <div className="error-banner" role="alert">{error}<button onClick={vm.clearError}>关闭</button></div>}
-    <div className="workspace"><aside className="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
+    <SplitPane left={<aside className="editor-panel" id="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
       <nav aria-label="编辑板块">{(['原文', '词汇', '表达', '主旨与译文', '样式'] as Tab[]).map(name => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>)}</nav>
       <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>撤销</button><button onClick={vm.redo} disabled={!canRedo}>重做</button><span>支持最近 100 次修改</span></div>
       <div className={`fields${tab === '词汇' ? ' vocabulary-fields' : ''}`}>
@@ -94,10 +100,10 @@ export default function EditorView() {
         </div><button className="add-button" onClick={vm.resetStyles}>恢复模板默认</button></>}
         {!!project.warnings.length && <div className="warning-list">{project.warnings.map((warning, index) => <p key={index}>{warning}</p>)}<button onClick={vm.clearWarnings}>已阅读提示</button></div>}
       </div><div className="notice" role="status">{notice}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
-    </aside><section className="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>1200 × 1600 px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
+    </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>1200 × 1600 px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
       <div className="preview-scroll"><div className="preview" style={{ '--zoom': zoom } as React.CSSProperties} data-ready={ready} ref={preview} onClick={jump} />
         {ready && <div className="page-downloads">{Array.from({ length: pages }, (_, index) => <button key={index} disabled={exporting} onClick={() => void vm.exportImages(index + 1)}>第 {index + 1} 页 PNG</button>)}</div>}
       </div>
-    </section></div>
+    </section>} />
   </div>;
 }

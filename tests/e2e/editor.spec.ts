@@ -52,7 +52,7 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   await page.getByRole('button', { name: '删除选中词汇', exact: true }).click();
   await page.getByRole('button', { name: '表达', exact: true }).click();
   await page.getByLabel('例句 1', { exact: true }).fill('An edited example.');
-  await page.getByLabel('例句译文 1', { exact: true }).fill('编辑后的译文。');
+  await page.getByLabel('翻译 1', { exact: true }).fill('编辑后的译文。');
   await page.getByRole('button', { name: '表达 1 下移', exact: true }).click();
   await page.getByRole('button', { name: '表达 2 上移', exact: true }).click();
   await page.getByRole('button', { name: '添加表达', exact: true }).click();
@@ -129,7 +129,7 @@ test('line pagination preserves long sentences, Chinese, graphemes, columns and 
   await load(page, project);
   expect(await assertCoverage(page)).toEqual([]);
   for (const [id, original] of [['p', project.source.paragraphs[0].text], ['x-1:example', longExample], ['zh', chinese]]) {
-    expect((await page.locator(`.card [data-source="${id}"]`).allTextContents()).join('')).toBe(original);
+    expect(await page.locator(`.card [data-source="${id}"]`).evaluateAll(nodes => nodes.map(node => node.querySelector('.line-content')?.textContent ?? node.textContent).join(''))).toBe(original);
     const pageNumbers = await page.locator(`.card [data-source="${id}"]`).evaluateAll(nodes => [...new Set(nodes.map(node => node.closest('.card')!.getAttribute('data-page')))]);
     expect(pageNumbers.length).toBeGreaterThan(1);
   }
@@ -176,6 +176,7 @@ test('styles inherit, short content flows, breaks persist, exports match preview
   const { writeFile } = await import('node:fs/promises');
   await writeFile('artifacts/test-results/preview.png', screenshot);
   await writeFile('artifacts/test-results/export.png', files[pngNames[0]]);
+  expect(screenshot.readUInt32BE(16)).toBe(1200); expect(screenshot.readUInt32BE(20)).toBe(1600);
   expect(screenshot.equals(Buffer.from(files[pngNames[0]]))).toBe(true);
   const stale = await request.post('/api/export', { data: { ...snapshot, signature: 'stale' } });
   expect(stale.status()).toBe(400);

@@ -23,7 +23,7 @@ test('phrase can finish a page while its meaning and example continue on next', 
   const phrasePage = await page.locator('[data-source="target:phrase"]').evaluate(node => Number(node.closest('.card')!.getAttribute('data-page')));
   const meaningPage = await page.locator('[data-source="target:meaning"]').evaluate(node => Number(node.closest('.card')!.getAttribute('data-page')));
   expect(meaningPage).toBe(phrasePage + 1);
-  await expect(page.locator('[data-source="target:example"]')).toHaveText('An example follows.');
+  await expect(page.locator('[data-source="target:example"] .line-content')).toHaveText('An example follows.');
 });
 
 test('all rendered fields preserve exact text and visible glyphs fit, including extreme styles and explicit newlines', async ({ page }) => {
@@ -43,7 +43,7 @@ test('all rendered fields preserve exact text and visible glyphs fit, including 
   for (const item of project.vocabulary) texts[item.id] = [item.word, ...(item.ipa ? [item.ipa] : []), item.pos, item.meaning].join(' ');
   for (const [id, original] of Object.entries(texts)) {
     const fragments = page.locator(`[data-source="${id}"]`);
-    expect((await fragments.allTextContents()).join('')).toBe(original);
+    expect(await fragments.evaluateAll(nodes => nodes.map(node => node.querySelector('.line-content')?.textContent ?? node.textContent).join(''))).toBe(original);
     const offsets = await fragments.evaluateAll(nodes => nodes.flatMap(node => [Number((node as HTMLElement).dataset.start), Number((node as HTMLElement).dataset.end)]));
     const boundaries = new Set([0, ...Array.from(new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(original), item => item.index + item.segment.length)]);
     expect(offsets.every(offset => boundaries.has(offset))).toBe(true);

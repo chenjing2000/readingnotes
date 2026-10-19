@@ -4,6 +4,7 @@ export type Block = { id: string; text: string; kind: string; indent?: boolean; 
 export type Line = { block: Block; start: number; end: number; indent: boolean; height: number };
 export type Layout = { pages: HTMLElement[]; signature: string; warnings: string[] };
 const FONT = '"Nunito Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+const EXPRESSION_LABELS: Partial<Record<string, string>> = { meaning: '含义：', example: '例句：', exampleTranslation: '翻译：' };
 
 function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> {
   let fontSize = styles.bodySize;
@@ -30,6 +31,15 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
 }
 
 function appendText(element: HTMLElement, project: Project, block: Block, start: number, end: number) {
+  const label = EXPRESSION_LABELS[block.kind];
+  const content = label ? document.createElement('span') : element;
+  if (label) {
+    if (start === 0) {
+      const prefix = document.createElement('span'); prefix.className = 'expression-label'; prefix.textContent = label;
+      prefix.style.color = '#006d87'; element.append(prefix);
+    }
+    content.className = 'line-content'; element.append(content);
+  }
   const marks = block.kind === 'article' ? project.highlights.filter(mark => mark.paragraphId === block.id && mark.start < end && mark.end > start) : [];
   const runs = block.runs?.filter(run => run.start < end && run.end > start) ?? [];
   const boundaries = [...new Set([start, end, ...marks.flatMap(mark => [Math.max(start, mark.start), Math.min(end, mark.end)]), ...runs.flatMap(run => [Math.max(start, run.start), Math.min(end, run.end)])])].sort((first, second) => first - second);
@@ -38,14 +48,14 @@ function appendText(element: HTMLElement, project: Project, block: Block, start:
     const value = block.text.slice(left, right);
     if (marks.some(mark => mark.start <= left && mark.end >= right)) {
       const strong = document.createElement('strong'); strong.className = 'hot'; strong.textContent = value;
-      strong.style.color = project.styles.accent; element.append(strong);
+      strong.style.color = project.styles.accent; content.append(strong);
     } else {
       const run = runs.find(run => run.start <= left && run.end >= right);
       if (run) {
         const span = document.createElement('span');
         Object.assign(span.style, typography({ ...block, kind: run.kind === 'meaning' ? 'vocab-meaning' : run.kind }, project.styles), { lineHeight: 'inherit' });
-        span.dataset.edit = `${block.id}:${run.kind}`; span.textContent = value; element.append(span);
-      } else element.append(document.createTextNode(value));
+        span.dataset.edit = `${block.id}:${run.kind}`; span.textContent = value; content.append(span);
+      } else content.append(document.createTextNode(value));
     }
   }
 }
@@ -59,12 +69,15 @@ export function measureLines(project: Project, block: Block, width: number, host
   const measureLeft = measure.getBoundingClientRect().left;
   const height = parseFloat(computed.lineHeight);
   const nodes: { node: Text; start: number; end: number }[] = [];
-  const walker = document.createTreeWalker(measure, NodeFilter.SHOW_TEXT);
+  // Labels consume layout space, but source offsets still refer only to the original field text.
+  const walker = document.createTreeWalker(measure, NodeFilter.SHOW_TEXT, {
+    acceptNode: node => node.parentElement?.classList.contains('expression-label') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+  });
   let total = 0, current: Node | null;
   while ((current = walker.nextNode())) { nodes.push({ node: current as Text, start: total, end: total + current.textContent!.length }); total += current.textContent!.length; }
   const range = document.createRange();
   let nodeIndex = 0, lineStart = 0, previousTop: number | undefined;
-  let glyphHeight = 0;
+  let glyphHeight = measure.querySelector('.expression-label')?.getBoundingClientRect().height ?? 0;
   let farthestRight = 0, widestGlyph = 0;
   const lines: Line[] = [];
   const segments = new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(block.text);
@@ -133,7 +146,7 @@ export async function paginate(project: Project): Promise<Layout> {
   Object.assign(host.style, { position: 'absolute', left: '-20000px', top: '0', visibility: 'hidden' });
   document.body.append(host);
   try {
-    const fontText = [project.title, ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text), ...project.vocabulary.map(item => item.word + item.ipa + item.meaning), ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea].join('');
+    const fontText = ['含义：例句：翻译：', project.title, ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text), ...project.vocabulary.map(item => item.word + item.ipa + item.meaning), ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea].join('');
     try {
       await Promise.all([document.fonts.load('400 36px "Nunito Sans"', fontText), document.fonts.load('800 36px "Nunito Sans"', fontText), document.fonts.load('400 32px "Noto Sans SC"', fontText), document.fonts.load('700 32px "Noto Sans SC"', fontText)]);
     } catch { throw new Error('本地字体加载失败。请按 README 重新安装依赖并构建，再刷新页面；项目仍可保存 JSON。'); }

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
-test('vocabulary table edits and moves the selected row, inserts below it and handles an empty table', async ({ page }) => {
+test('four-column vocabulary table edits and moves the selected row, inserts below it and handles an empty table', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const project = { ...fixture, vocabulary: [
@@ -13,7 +13,7 @@ test('vocabulary table edits and moves the selected row, inserts below it and ha
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   const table = page.getByRole('table', { name: '词汇表', exact: true });
-  await expect(table.getByRole('columnheader')).toHaveText(['词头', '音标', '含义']);
+  await expect(table.getByRole('columnheader')).toHaveText(['词头', '音标', '词性', '含义']);
   const actions = page.getByRole('group', { name: '词汇行操作', exact: true });
   await expect(actions.getByRole('button')).toHaveCount(4);
   const up = actions.getByRole('button', { name: '上移选中词汇', exact: true });
