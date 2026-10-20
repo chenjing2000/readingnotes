@@ -4,6 +4,7 @@ import { zipSync, strToU8 } from 'fflate';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseProject } from '../models/project';
+import { describeLayoutMismatch, type LayoutDiagnostics } from '../services/layoutVerification';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const app = express();
@@ -21,12 +22,21 @@ app.post('/api/export', async (request, response) => {
   let failure = '';
   try {
     const project = parseProject(request.body.project);
-    browser = await chromium.launch();
+    try { browser = await chromium.launch(); }
+    catch (reason) {
+      const message = reason instanceof Error ? reason.message : String(reason);
+      if (/Executable doesn't exist at/i.test(message)) throw new Error('导出用的 Playwright Chromium 未安装或已被移除。请在项目目录运行 npx.cmd playwright install chromium，然后重试；已安装的 Chrome 和 Node.js 不能代替此组件。');
+      throw reason;
+    }
     const page = await browser.newPage({ viewport: { width: 1440, height: 1800 }, deviceScaleFactor: 1 });
     await page.goto(`${baseURL}/render`);
     await page.waitForFunction(() => typeof window.renderProject === 'function');
     const signature = await page.evaluate(input => window.renderProject(input), project);
-    if (signature !== request.body.signature) throw new Error('导出与预览分页不一致，请刷新预览后再导出；请使用 Chromium/Chrome/Edge 浏览器。');
+    if (signature !== request.body.signature) {
+      const diagnostics = await page.evaluate(() => window.renderDiagnostics);
+      const detail = diagnostics ? describeLayoutMismatch(request.body.diagnostics, diagnostics as LayoutDiagnostics) : '导出页面缺少诊断信息，请重新构建、重启服务并刷新页面后重试。';
+      throw new Error(`导出与预览分页不一致：${detail}`);
+    }
     const count = await page.locator('.card').count();
     const requested = request.body.page as number | undefined;
     if (requested !== undefined && (!Number.isInteger(requested) || requested < 1 || requested > count)) throw new Error('页码无效。');

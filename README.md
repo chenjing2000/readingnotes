@@ -71,7 +71,7 @@ npm.cmd start
 - 页面自动流动，没有固定页数上限或“删减以适配”。英文/中文段落、表达短语、含义、例句及例句译文都可按真实行边界续页；续段不重复缩进。
 - 左右栏分隔线可拖动调整宽度；聚焦分隔线后可用左右方向键微调，Home / End 调到边界。调整的是当前工作区比例，卡片画布保持 1200×1600。
 - Useful Expressions 的含义、例句和例句翻译分别显示 `含义：`、`例句：`、`翻译：`，标签颜色为 `#006d87`。标签计入实际分页测量，只在该字段首行出现，续行/续页保留完整正文；JSON 仍存原始字段内容。
-- “原文”页的“个性化页眉”默认 `some birds on tree`，每页与 `ENGLISH READING` 同行靠右显示，字体、字号和字重相同，颜色为 `#b2bfc3`。修改内容随 JSON 和草稿保存，旧项目缺少该字段时使用默认值；清空则右侧留空，过长时显示省略号，避免与左侧重叠。
+- “原文”页的“个性化页眉”默认 `SOME BIRDS ON TREE`，每页与 `ENGLISH READING` 同行靠右显示，字体、字号和字重相同，颜色为 `#b2bfc3`。修改内容随 JSON 和草稿保存，旧项目缺少该字段时使用默认值；清空则右侧留空，过长时显示省略号，避免与左侧重叠。
 - 长无空格 token 可在 grapheme 边界折行。过小行距若容纳不了字体包围框，会增加实际行高并提示，避免裁切。
 - 浏览器对连续中文标点的行末压缩可能在独立行输出时改变宽度；分页器会复测实际输出行，必要时缩小测量宽度并提示，保持完整可见。
 - 等状态变成“排版就绪”，点“导出全部 PNG / ZIP”。ZIP 含每页 **1200×1600** PNG 及当次项目 JSON；单页按钮在全部预览下方。
@@ -98,6 +98,8 @@ E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已�
 - `src/views/EditorView.tsx`：编辑表单、命令绑定、预览导航与 DOM 挂载。
 - `src/viewmodels/useEditorViewModel.ts`：编辑状态、历史、保存与导出命令、分页调度。
 - `src/services/projectIO.ts`：本机草稿恢复、隔离与写入、JSON 读取、下载和导出请求。
+- `src/services/layoutVerification.ts`：校验预览诊断信息，定位项目数据、首条排版记录或页数差异。
+- 逐行诊断不写入项目 JSON；若附带诊断会使请求超过 5 MiB，则只传项目校验值与页数，失败时明确说明未附带逐行信息，原有项目与排版签名检查继续执行。
 - `src/server/index.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
 - `assets/projects/brainco/` 与 `assets/reference/v17/` 保留原始内容。`artifacts/demo/project.json` 是可继续导入编辑的 schema 2 样例。
 - schema 2 的精确重点存为 `{id, paragraphId, start, end, quote}`，区间单位为 JavaScript UTF-16 code unit，`end` 不包含端点；保存/加载校验 quote。
@@ -109,8 +111,8 @@ E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已�
 ## 常见问题
 
 - **字体错误**：保存 JSON 后重新执行 `npm.cmd ci`、`npm.cmd run build`，重启服务并刷新。字体未就绪时不会截图。
-- **Chromium 缺失**：执行 `npx.cmd playwright install chromium`。不要执行浏览器缓存清理后直接导出。
+- **Chromium 缺失**：只有提示导出浏览器可执行文件缺失时，执行 `npx.cmd playwright install chromium`。导出使用 Playwright 配套的后台 Chromium，与打开编辑器的 Chrome、运行服务的 Node.js 分别独立。
 - **端口被占用**：自定义端口可用 `$env:PORT='4320'; npm.cmd start`，随后打开对应地址；E2E 同样读取 `PORT`，未设置时使用 4317。
 - **npm/浏览器安装失败**：首次安装需要访问 npm 与 Playwright 下载地址；检查本机代理。无需更改项目代码或关闭数据校验。
-- **导出失败**：先等分页完成；确认用 Chromium 系浏览器。错误信息会保留，编辑内容和 JSON 保存仍可用。
+- **导出失败**：按具体错误处理，不需要因“分页不一致”重新安装浏览器或 Node.js。先保存 JSON；更新代码后重新构建、重启服务并刷新页面。分页不一致时会区分项目数据差异与逐行排版差异，并显示首个不同的记录及数值；若仍失败，请保留该信息以便定位。旧页面缺少诊断信息时会明确要求刷新。项目和排版签名校验仍保留，不会忽略差异后强行导出。
 - **大型项目**：单字段最多 300000 字符，导出请求上限 5MB；过大的 JSON 会明确拒绝。分页为主线程测量，超大项目可能短暂阻塞界面。

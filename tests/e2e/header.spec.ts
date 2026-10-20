@@ -3,12 +3,12 @@ import { test, expect } from '@playwright/test';
 test('personalized headers repeat on every page, match typography and persist edits', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const input = page.getByRole('textbox', { name: '个性化页眉', exact: true });
-  await expect(input).toHaveValue('some birds on tree');
+  await expect(input).toHaveValue('SOME BIRDS ON TREE');
   const headers = page.locator('.preview .personalized-header');
   await expect(headers).toHaveCount(await page.locator('.preview .card').count());
   expect(await headers.count()).toBeGreaterThan(1);
   for (const header of await headers.all()) {
-    await expect(header).toHaveText('some birds on tree');
+    await expect(header).toHaveText('SOME BIRDS ON TREE');
     await expect(header).toHaveCSS('color', 'rgb(178, 191, 195)');
     await expect(header).toHaveCSS('text-align', 'right');
   }
@@ -22,7 +22,7 @@ test('personalized headers repeat on every page, match typography and persist ed
   await input.fill('My reading notes');
   await expect(headers.first()).toHaveText('My reading notes');
   await page.getByRole('button', { name: '撤销', exact: true }).click();
-  await expect(input).toHaveValue('some birds on tree');
+  await expect(input).toHaveValue('SOME BIRDS ON TREE');
   await page.getByRole('button', { name: '重做', exact: true }).click();
   await expect(headers.first()).toHaveText('My reading notes');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();

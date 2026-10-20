@@ -71,3 +71,14 @@ it('does not send a successful image when browser cleanup fails', async () => {
   expect(next.statusCode).toBe(200);
   expect(next.body).toEqual(png);
 });
+
+it('suggests installing Chromium only when its executable is missing', async () => {
+  const request = { headers: {}, body: { project: fixture, signature: 'unused' } } as Request;
+  launch.mockRejectedValueOnce(new Error("browserType.launch: Executable doesn't exist at C:/missing/chrome.exe"));
+  const missing = response(); await exportImages(request, missing as unknown as Response);
+  expect(missing.body).toContain('npx.cmd playwright install chromium');
+  launch.mockRejectedValueOnce(new Error('Browser launch permission denied'));
+  const denied = response(); await exportImages(request, denied as unknown as Response);
+  expect(denied.body).toContain('permission denied');
+  expect(denied.body).not.toContain('install chromium');
+});

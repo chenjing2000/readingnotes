@@ -43,7 +43,7 @@ export function useEditorViewModel() {
       paginate(project).then(layout => {
         if (cancelled) return;
         setRendered({ project, layout });
-        window.editor = { project, signature: layout.signature };
+        window.editor = { project, signature: layout.signature, diagnostics: layout.diagnostics };
         if (layout.warnings.length) setNotice(layout.warnings.join(' '));
       }).catch(reason => { if (!cancelled) setError(`分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
     }, 120);
@@ -70,12 +70,13 @@ export function useEditorViewModel() {
     } catch (reason) { setError(`项目保存失败：${String(reason)}`); }
   }
   async function exportImages(page?: number) {
+    if (!ready || exporting) return;
     setExporting(true); setError('');
     try {
-      const image = await requestExport(project, rendered?.layout.signature ?? '', page);
+      const image = await requestExport(project, rendered.layout.signature, page, rendered.layout.diagnostics);
       download(image, page ? `page-${String(page).padStart(2, '0')}.png` : 'reading-cards.zip');
       setNotice('导出完成，已发起下载。图片对应点击导出时的项目快照。');
-    } catch (reason) { setError(`导出失败：${String(reason)}。请确认 Chromium 已安装，并等待分页完成后重试。`); }
+    } catch (reason) { setError(`导出失败：${reason instanceof Error ? reason.message : String(reason)}`); }
     finally { setExporting(false); }
   }
   function setProjectText(key: 'title' | 'mainIdea' | 'personalizedHeader', value: string) {

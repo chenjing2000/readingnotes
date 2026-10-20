@@ -1,6 +1,7 @@
 {
   "id": "brainco-example",
   "title": "Brain-Computer Interfaces: Beyond Neuralink",
+  "personalizedHeader": "SOME BIRDS ON TREE",
   "readingLevel": 6000,
   "source": {
     "paragraphs": [
@@ -191,161 +192,161 @@
   "schemaVersion": 2,
   "highlights": [
     {
-      "id": "c6ac606b-6086-4f60-9bac-9ca999039a1d",
+      "id": "fac7c407-c22e-4543-b408-d18634a47594",
       "paragraphId": "en-1",
       "start": 35,
       "end": 45,
       "quote": "neuro-tech"
     },
     {
-      "id": "f0a36429-f3f5-4f20-9983-baad004f0aa3",
+      "id": "39a11bd8-1141-436c-93d1-0f1f64862193",
       "paragraphId": "en-1",
       "start": 86,
       "end": 95,
       "quote": "showcases"
     },
     {
-      "id": "ff12d578-1c42-47db-806c-d20ce389b94e",
+      "id": "983d6865-627d-4181-b677-f29bfcc8b202",
       "paragraphId": "en-1",
       "start": 114,
       "end": 122,
       "quote": "wearable"
     },
     {
-      "id": "b4ab6a9f-4e36-4e38-96c6-f9d96dd3ad25",
+      "id": "eeb24f10-2c97-4b26-b162-80e89fbf03c9",
       "paragraphId": "en-1",
       "start": 165,
       "end": 172,
       "quote": "amputee"
     },
     {
-      "id": "e2740a96-1a4d-45d9-9e64-34bb97b29845",
+      "id": "05836c69-35b0-433a-954d-7484e65e8182",
       "paragraphId": "en-1",
       "start": 281,
       "end": 288,
       "quote": "amputee"
     },
     {
-      "id": "c31c91c7-ecf9-470a-ba99-105a34b94cef",
+      "id": "2d767024-4889-4c94-9f5a-f453b6825b94",
       "paragraphId": "en-1",
       "start": 214,
       "end": 220,
       "quote": "bionic"
     },
     {
-      "id": "29103a40-1450-43e5-b06b-aa5d8552d1d7",
+      "id": "e49ffb5a-96b2-44c4-b685-4dcee471a4bc",
       "paragraphId": "en-1",
       "start": 312,
       "end": 332,
       "quote": "paces back and forth"
     },
     {
-      "id": "718c1034-5198-448d-a155-6ff45c31b1f9",
+      "id": "3759adb1-092b-41d3-a5df-9caa36a413a7",
       "paragraphId": "en-1",
       "start": 346,
       "end": 355,
       "quote": "onlookers"
     },
     {
-      "id": "8d3f6d36-30d0-46b9-ac7f-5bd1c2cbbd9f",
+      "id": "0b09ea2a-57b3-4a01-87b2-c3564f0f374e",
       "paragraphId": "en-1",
       "start": 371,
       "end": 375,
       "quote": "limb"
     },
     {
-      "id": "b3f98f98-cc16-4dc8-8d05-d7cfba40e63e",
+      "id": "9ea5fb47-57d1-4113-a49c-2562daea7966",
       "paragraphId": "en-2",
       "start": 129,
       "end": 132,
       "quote": "don"
     },
     {
-      "id": "0ff11ce9-da87-4bc6-865a-39b1ea7b49de",
+      "id": "2f261bcd-be2b-42e2-8741-4ed67681852c",
       "paragraphId": "en-2",
       "start": 151,
       "end": 164,
       "quote": "low-amplitude"
     },
     {
-      "id": "24dbedd2-910b-42f3-b773-52b975d41184",
+      "id": "9fc48a9d-229f-4336-a0e6-91f50071e231",
       "paragraphId": "en-2",
       "start": 176,
       "end": 190,
       "quote": "micro-currents"
     },
     {
-      "id": "6ba098c2-09af-4f97-90c0-369c816c2ad5",
+      "id": "214facfa-564b-45e3-8731-3cb4190978f2",
       "paragraphId": "en-2",
       "start": 200,
       "end": 212,
       "quote": "frontal lobe"
     },
     {
-      "id": "ef0e0be4-a19d-41bf-a11d-4b4160f9903a",
+      "id": "9805e878-42ca-46ff-9882-f947e3ab0d5e",
       "paragraphId": "en-2",
       "start": 214,
       "end": 224,
       "quote": "supposedly"
     },
     {
-      "id": "f31535ed-8a24-4016-a941-6f5994401d8d",
+      "id": "b425a25a-8663-44af-b717-0eb118568e1a",
       "paragraphId": "en-2",
       "start": 228,
       "end": 234,
       "quote": "induce"
     },
     {
-      "id": "8ad47837-1eb9-4b4a-ae51-a2279b9fbf0d",
+      "id": "1d538a9c-b030-4012-a9c7-f2c885962aeb",
       "paragraphId": "en-2",
       "start": 268,
       "end": 293,
       "quote": "brain-computer interfaces"
     },
     {
-      "id": "d23583a0-ba0f-49b6-b542-3d0ce1978bca",
+      "id": "9097e851-120c-4019-b615-be34d354bd87",
       "paragraphId": "en-2",
       "start": 320,
       "end": 335,
       "quote": "deliver signals"
     },
     {
-      "id": "110ab0e4-96ad-4631-9929-50e3123cb9cf",
+      "id": "dab95aa8-28cb-4128-8d12-f5e9c1f589f0",
       "paragraphId": "en-2",
       "start": 377,
       "end": 410,
       "quote": "have been closely associated with"
     },
     {
-      "id": "12800035-a9a8-47cc-ae70-de7b5ae9a008",
+      "id": "cc66b8aa-3564-49cf-9835-f84f1b8c71b4",
       "paragraphId": "en-2",
       "start": 507,
       "end": 521,
       "quote": "conduct trials"
     },
     {
-      "id": "b48dfee9-8247-403e-a0fd-de1f7175eb17",
+      "id": "990ef017-aedf-4a7d-8bf2-c08948d610eb",
       "paragraphId": "en-2",
       "start": 525,
       "end": 533,
       "quote": "wireless"
     },
     {
-      "id": "b57ed601-2701-49fe-bcf6-8024325c0310",
+      "id": "326776b1-e6f2-4bb2-96bc-d2ef2b9273f3",
       "paragraphId": "en-2",
       "start": 534,
       "end": 548,
       "quote": "brain implants"
     },
     {
-      "id": "55a08af4-40f6-4cf8-b9bc-e864494915f1",
+      "id": "019c67b8-aca2-41be-bfad-e24da7e6d8f0",
       "paragraphId": "en-2",
       "start": 560,
       "end": 568,
       "quote": "severely"
     },
     {
-      "id": "34dee6ae-0997-4960-9d85-48754b5551e0",
+      "id": "74cbd72d-8af8-4c56-a849-0d0a47d5dc23",
       "paragraphId": "en-2",
       "start": 663,
       "end": 682,

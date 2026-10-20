@@ -8,11 +8,13 @@ import './views/editor.css';
 import EditorView from './views/EditorView';
 import { paginate } from './services/pagination';
 import { parseProject, type Project } from './models/project';
+import type { LayoutDiagnostics } from './services/layoutVerification';
 
 declare global {
   interface Window {
     renderProject: (project: unknown) => Promise<string>;
-    editor: { project: Project; signature: string };
+    editor: { project: Project; signature: string; diagnostics: LayoutDiagnostics };
+    renderDiagnostics?: LayoutDiagnostics;
   }
 }
 if (location.pathname === '/render') {
@@ -20,6 +22,7 @@ if (location.pathname === '/render') {
   window.renderProject = async input => {
     const result = await paginate(parseProject(input));
     document.getElementById('root')!.replaceChildren(...result.pages);
+    window.renderDiagnostics = result.diagnostics;
     return result.signature;
   };
 } else createRoot(document.getElementById('root')!).render(<React.StrictMode><EditorView /></React.StrictMode>);

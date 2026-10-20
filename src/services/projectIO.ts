@@ -1,5 +1,6 @@
 import fixture from '../../assets/projects/brainco/project.json';
 import { parseProject, type Project } from '../models/project';
+import type { LayoutDiagnostics } from './layoutVerification';
 
 const DRAFT = 'reading-editor.draft.v2';
 
@@ -34,9 +35,12 @@ export function download(data: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-export async function requestExport(project: Project, signature: string, page?: number): Promise<Blob> {
-  const snapshot = { project, signature, page };
-  const response = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(snapshot) });
+export async function requestExport(project: Project, signature: string, page?: number, diagnostics?: LayoutDiagnostics): Promise<Blob> {
+  const snapshot = { project, signature, page, diagnostics };
+  let body = JSON.stringify(snapshot);
+  // Repeated long IDs in line records must not consume the project's 5 MiB request budget.
+  if (diagnostics && new Blob([body]).size > 5 * 1024 * 1024) body = JSON.stringify({ ...snapshot, diagnostics: { projectSignature: diagnostics.projectSignature, pages: diagnostics.pages } });
+  const response = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   if (!response.ok) throw new Error(await response.text());
   return response.blob();
 }

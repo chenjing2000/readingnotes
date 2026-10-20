@@ -5,7 +5,7 @@ import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } fro
 
 describe('project persistence and precise highlights', () => {
   it('defaults missing personalized headers and preserves custom or empty values', () => {
-    expect(parseProject(fixture).personalizedHeader).toBe('some birds on tree');
+    expect(parseProject(fixture).personalizedHeader).toBe('SOME BIRDS ON TREE');
     for (const personalizedHeader of ['My reading notes', '']) {
       const project = parseProject({ ...fixture, personalizedHeader });
       expect(project.personalizedHeader).toBe(personalizedHeader);

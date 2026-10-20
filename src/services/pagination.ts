@@ -1,8 +1,9 @@
 import { layoutKey, type Project, type Styles } from '../models/project';
+import type { LayoutDiagnostics, LayoutRecord } from './layoutVerification';
 
 export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string }[] };
 export type Line = { block: Block; start: number; end: number; indent: boolean; height: number };
-export type Layout = { pages: HTMLElement[]; signature: string; warnings: string[] };
+export type Layout = { pages: HTMLElement[]; signature: string; warnings: string[]; diagnostics: LayoutDiagnostics };
 const FONT = '"Nunito Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif';
 const EXPRESSION_LABELS: Partial<Record<string, string>> = { meaning: '含义：', example: '例句：', exampleTranslation: '翻译：' };
 
@@ -160,7 +161,7 @@ export async function paginate(project: Project): Promise<Layout> {
     const pages: HTMLElement[] = [];
     let pageBody: HTMLElement;
     let used = 0;
-    const records: unknown[] = [];
+    const records: LayoutRecord[] = [];
     const coverage = new Map<string, { original: string; pieces: { start: number; end: number }[] }>();
     function newPage() {
       const page = document.createElement('section'); page.className = 'card'; page.dataset.page = String(pages.length + 1);
@@ -248,6 +249,8 @@ export async function paginate(project: Project): Promise<Layout> {
     if (host.dataset.adjustedWrap) warnings.push('部分标点会悬挂出文本框，已缩小实际换行宽度，确保文字完整可见。');
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify([project, records])));
     const signature = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
-    return { pages, signature, warnings };
+    const projectDigest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(project)));
+    const projectSignature = Array.from(new Uint8Array(projectDigest), byte => byte.toString(16).padStart(2, '0')).join('');
+    return { pages, signature, warnings, diagnostics: { projectSignature, pages: pages.length, records } };
   } finally { host.remove(); }
 }
