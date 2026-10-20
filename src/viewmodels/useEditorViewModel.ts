@@ -78,7 +78,7 @@ export function useEditorViewModel() {
     } catch (reason) { setError(`导出失败：${String(reason)}。请确认 Chromium 已安装，并等待分页完成后重试。`); }
     finally { setExporting(false); }
   }
-  function setProjectText(key: 'title' | 'mainIdea', value: string) {
+  function setProjectText(key: 'title' | 'mainIdea' | 'personalizedHeader', value: string) {
     update(current => ({ ...current, [key]: value }));
   }
   function setParagraphText(key: ParagraphCollection, id: string, text: string) {

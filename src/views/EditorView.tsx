@@ -74,6 +74,7 @@ export default function EditorView() {
       <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>撤销</button><button onClick={vm.redo} disabled={!canRedo}>重做</button><span>支持最近 100 次修改</span></div>
       <div className={`fields${tab === '词汇' ? ' vocabulary-fields' : ''}`}>
         {tab === '原文' && <>
+          <label className="field"><span>个性化页眉</span><input type="text" aria-label="个性化页眉" value={project.personalizedHeader} onChange={event => vm.setProjectText('personalizedHeader', event.target.value)} /></label>
           {field('英文标题', project.title, value => vm.setProjectText('title', value), 'project:title')}
           <p className="hint">在下方英文框选择文字，再点“标注 / 取消”。高亮字号始终继承正文。</p>
           {project.source.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>

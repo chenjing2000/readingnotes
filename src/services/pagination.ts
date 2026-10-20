@@ -146,7 +146,7 @@ export async function paginate(project: Project): Promise<Layout> {
   Object.assign(host.style, { position: 'absolute', left: '-20000px', top: '0', visibility: 'hidden' });
   document.body.append(host);
   try {
-    const fontText = ['含义：例句：翻译：', project.title, ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text), ...project.vocabulary.map(item => item.word + item.ipa + item.meaning), ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea].join('');
+    const fontText = ['含义：例句：翻译：', project.personalizedHeader, project.title, ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text), ...project.vocabulary.map(item => item.word + item.ipa + item.meaning), ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea].join('');
     try {
       await Promise.all([document.fonts.load('400 36px "Nunito Sans"', fontText), document.fonts.load('800 36px "Nunito Sans"', fontText), document.fonts.load('400 32px "Noto Sans SC"', fontText), document.fonts.load('700 32px "Noto Sans SC"', fontText)]);
     } catch { throw new Error('本地字体加载失败。请按 README 重新安装依赖并构建，再刷新页面；项目仍可保存 JSON。'); }
@@ -165,7 +165,10 @@ export async function paginate(project: Project): Promise<Layout> {
     function newPage() {
       const page = document.createElement('section'); page.className = 'card'; page.dataset.page = String(pages.length + 1);
       const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = 'ENGLISH READING';
-      Object.assign(eyebrow.style, { top: `${styles.marginTop}px`, left: `${styles.marginX}px` });
+      const header = document.createElement('header'); header.className = 'page-header';
+      Object.assign(header.style, { top: `${styles.marginTop}px`, left: `${styles.marginX}px`, right: `${styles.marginX}px` });
+      const personalized = document.createElement('span'); personalized.className = 'eyebrow personalized-header'; personalized.textContent = project.personalizedHeader;
+      header.append(eyebrow, personalized);
       pageBody = document.createElement('main'); pageBody.className = 'page-body';
       Object.assign(pageBody.style, { top: `${bodyTop}px`, left: `${styles.marginX}px`, width: `${width}px`, height: `${bodyHeight}px` });
       const footer = document.createElement('footer'); footer.className = 'footer';
@@ -177,7 +180,7 @@ export async function paginate(project: Project): Promise<Layout> {
       const factor = Math.min(1, (width - 110) / labelWidth);
       label.style.fontSize = `${17 * factor}px`; label.style.letterSpacing = `${.4 * factor}px`;
       footer.append(label, document.createElement('span'));
-      page.append(eyebrow, pageBody, footer); pages.push(page); used = 0;
+      page.append(header, pageBody, footer); pages.push(page); used = 0;
     }
     newPage();
     function addRow(lines: (Line | undefined)[], columnWidth: number, gap: number) {

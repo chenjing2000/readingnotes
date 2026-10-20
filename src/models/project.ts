@@ -20,7 +20,7 @@ const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c
 const paragraph = z.object({ id, text });
 const highlight = z.object({ id, paragraphId: id, start: z.number().int().nonnegative(), end: z.number().int().positive(), quote: text });
 const common = {
-  id, title: text, readingLevel: z.number().optional(),
+  id, title: text, personalizedHeader: text.default('some birds on tree'), readingLevel: z.number().optional(),
   source: z.object({ paragraphs: z.array(paragraph).max(500) }),
   translation: z.object({ paragraphs: z.array(paragraph).max(500) }),
   vocabulary: z.array(z.object({ id, word: text, pos: text, meaning: text, ipa: text.optional() })).max(2000),

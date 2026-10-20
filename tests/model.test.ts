@@ -4,6 +4,14 @@ import fixture from '../assets/projects/brainco/project.json';
 import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
 
 describe('project persistence and precise highlights', () => {
+  it('defaults missing personalized headers and preserves custom or empty values', () => {
+    expect(parseProject(fixture).personalizedHeader).toBe('some birds on tree');
+    for (const personalizedHeader of ['My reading notes', '']) {
+      const project = parseProject({ ...fixture, personalizedHeader });
+      expect(project.personalizedHeader).toBe(personalizedHeader);
+      expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
+    }
+  });
   it('migrates without changing either independent snapshot', () => {
     const project = parseProject(fixture);
     expect(project.schemaVersion).toBe(2);
