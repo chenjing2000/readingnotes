@@ -10,7 +10,7 @@ Windows 本地运行的 React / TypeScript 编辑器：完整内容编辑、结�
 | `tests/` | 单元测试与浏览器回归测试 |
 | `tools/` | Vite / Playwright 配置和演示生成脚本 |
 | `docs/` | 交接说明、实施计划、验收规范、审查报告与 skill |
-| `assets/` | `projects/` 原始样例和 `reference/` 参考资料 |
+| `assets/` | `projects/` 当前格式样例和 `reference/` 原始参考资料 |
 | `artifacts/` | `dist/` 生产构建、`demo/` 演示文件、`verification/` 验证报告；测试临时目录也集中于此 |
 
 根目录仅保留 README、npm 清单与锁文件、TypeScript 配置、HTML 入口和 Git 忽略规则。`node_modules/` 由 npm 管理。下文代码路径均相对于项目根目录；常用 npm 命令不变。
@@ -70,9 +70,9 @@ npm.cmd start
 
 1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `assets/projects/brainco/project.json` 或自己保存的项目。旧版 schema 1 自动迁移为 schema 2；原始附件不被改写。
 2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇页使用“词头 / 音标 / 词性 / 含义”四列表格，一词一行；各单元格采用不可拉伸的单行输入框，长内容可在框内横向查看。点击或编辑单元格选中该行，下方 `↑ / ↓ / × / +` 分别上移、下移、删除及在选中行下方插入空白行；插入后自动选中新行并聚焦词头，空表也可用 `+` 建立第一行。表达页每条内容使用四行两列表格，题头依次为“短语 / 含义 / 例句 / 翻译”，输入框按实际文字与栏宽自动调整高度，支持添加、删除及上下排序。两种表格的题头和内容均垂直居中。英文与中文段落可添加、删除；空译文段落会保留并提示。
-3. 在英文编辑框选中一处文字，点“标注 / 取消所选重点”。取消只影响选区；原文改动会迁移未受影响的范围，涉及高亮原文的替换会取消该处高亮并提示重新确认。
+3. 在英文编辑框选中一个完整单词或词组，点“标注 / 取消所选重点”。添加时直接按所选表面形式加入词汇或表达条目，词典形式留给后续 ChatGPT 整理；已有同名条目则复用。只选半个单词会提示重新选择。同一规则命中的所有位置同步高亮。取消时从相关条目的列表移除覆盖所选内容的规则，全部相同命中一起取消，条目本身保留；可撤销/重做。
 
-   导入 JSON 时，词汇与表达条目的 `highlight` 字符串列表会自动扫描原文并补充高亮。例如词汇可写 `"highlight": ["run", "runs", "ran", "running"]`，表达可写 `"highlight": ["take off", "took off"]`。只匹配显式列出的形式，忽略大小写，按完整词/词组边界匹配；词组内允许连续空白或段落内换行，不跨段落。重复和重叠命中合并，已有手工标注保留。旧条目缺少字段时默认为 `[]`；列表也随 JSON 保存。普通编辑、草稿恢复、保存和导出不会重新扫描，手工取消可保留；再次导入仍会按规则补齐命中。
+   高亮只由词汇和表达条目的 `highlight` 字符串列表管理，保存、草稿和导出均不包含顶层 `highlights`。例如词汇可写 `"highlight": ["run", "runs", "ran", "running"]`，表达可写 `"highlight": ["take off", "took off"]`。程序随当前原文计算命中：忽略大小写，按完整词/词组边界匹配，词组内允许连续空白或段内换行，不跨段落，重复及重叠命中合并。原文编辑不改写列表；旧版顶层高亮导入后先迁移到条目再移除，不覆盖原 JSON 文件，重新保存即可得到新格式。
 4. 点击预览文字，可定位到对应编辑字段。预览本身不是直接输入区域。
 5. “样式”调整标题、英文正文、表达短语、中文字号、英/中行距、段距、边距和颜色。“恢复模板默认”可撤销。重点字号继承正文。
 6. “前换页”在逻辑内容块之前加入手动分页。词汇表下方可设置“选中词汇前换页”。卡片预览与导出中的词汇仍按每行左→右的双栏顺序读取；一对词汇中的手动分页作用于该行。
@@ -110,7 +110,7 @@ E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已�
 
 ## 文件与数据格式
 
-- `src/models/project.ts`：Zod 校验、schema 迁移、精确高亮及文本编辑映射。
+- `src/models/project.ts`：Zod 校验、schema 迁移、条目高亮规则、手工收集及运行期匹配。
 - `src/services/pagination.ts`：独立 DOM Range / grapheme 行测量、流式分页及覆盖连续性断言；`tests/e2e/pagination.spec.ts` 在真实浏览器测试。
 - `src/views/EditorView.tsx`：编辑表单、命令绑定、预览导航与 DOM 挂载。
 - `src/viewmodels/useEditorViewModel.ts`：编辑状态、历史、保存与导出命令、分页调度。
@@ -118,9 +118,9 @@ E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已�
 - `src/services/layoutVerification.ts`：校验预览诊断信息，定位项目数据、首条排版记录或页数差异。
 - 逐行诊断不写入项目 JSON；若附带诊断会使请求超过 5 MiB，则先简化为项目校验值与页数，摘要仍超限时完全省略诊断，以保留原本合法的项目请求。失败时会说明诊断缺失，原有项目与排版签名检查继续执行。
 - `src/server/index.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
-- `assets/projects/brainco/` 与 `assets/reference/v17/` 保留原始内容。`artifacts/demo/project.json` 是可继续导入编辑的 schema 2 样例。
-- schema 2 的精确重点存为 `{id, paragraphId, start, end, quote}`，区间单位为 JavaScript UTF-16 code unit，`end` 不包含端点；保存/加载校验 quote。
-- schema 1 迁移时为每处高亮生成 UUID，保存后保留该 ID；原附件不改写。手动分页键单独允许最长 2048 字符，以容纳最长 200 字符业务 ID 的 JSON 转义及节点类型。
+- `assets/projects/brainco/project.json` 已更新为条目管理高亮的当前格式；其原始 schema 1 副本保留在 `assets/reference/v17/project.schema1.json`，原文/译文 Markdown 和其他参考资料保持。`artifacts/demo/project.json` 为可继续导入的演示项目。
+- schema 2 不再有顶层 `highlights`，只保存每个词汇/表达的 `highlight: string[]`。命中位置只在渲染时计算，不进入 JSON、草稿或导出项目文件。
+- 旧版 schema 1 文本标注或旧 schema 2 位置标注导入时迁移为条目规则，错误的旧坐标仍拒绝；无法直接归入同名条目的表面形式作为待整理条目保留。后续可按文章转 JSON skill 让 ChatGPT 还原词典形式、合并变体，不能丢弃原始列表。手动分页键仍允许最长 2048 字符以容纳业务 ID 的 JSON 转义。
 - 全局样式在 `styles`；手动分页在 `layoutOverrides.manualPageBreaks`，采用 `JSON.stringify([kind, sourceId])` 的字符串键隔离业务 ID。旧的裸 ID 会迁移。`elementStyles` 仅保留数据，当前不应用单元素覆写。
 
 尚未实现 Markdown 导入/导出、standalone HTML、直接在预览输入、自由位置分页、单元素样式、孤行优化或桌面安装包。词汇统一跟在完整文章之后，不执行文章页与对应词汇的自动配对；这是 HANDOFF 允许的初版简化。

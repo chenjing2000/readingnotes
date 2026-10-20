@@ -19,7 +19,7 @@ it('keeps large line diagnostics within the existing export request budget', asy
 });
 
 it('does not let summary diagnostics push an otherwise valid request over the limit', async () => {
-  const project = parseProject(fixture); project.highlights = [];
+  const project = parseProject(fixture);
   project.source.paragraphs = Array.from({ length: 18 }, (_, index) => ({ id: `boundary-${index}`, text: index < 17 ? 'a'.repeat(300000) : '' }));
   const limit = 5 * 1024 * 1024;
   const overhead = new Blob([JSON.stringify({ project, signature: 'signature' })]).size;

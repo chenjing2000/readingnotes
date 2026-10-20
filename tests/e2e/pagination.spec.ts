@@ -8,7 +8,7 @@ test('phrase can finish a page while its meaning and example continue on next', 
   await page.goto('/render');
   await page.waitForFunction(() => typeof window.renderProject === 'function');
   const project = parseProject(fixture);
-  project.title = 'Boundary'; project.highlights = []; project.vocabulary = [];
+  project.title = 'Boundary'; project.vocabulary = [];
   project.source.paragraphs = [{ id: 'filler', text: 'Filler sentence. '.repeat(70) }];
   project.expressions = [{ id: 'target', phrase: 'target phrase', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。', highlight: [] }];
   await page.evaluate(input => window.renderProject(input), project);
@@ -30,7 +30,6 @@ test('all rendered fields preserve exact text and visible glyphs fit, including 
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
   const project = parseProject(fixture);
   project.source.paragraphs[0].text += '\nA new line.\n\n👩🏽‍💻 é ' + 'X'.repeat(500) + ' hello ' + ' '.repeat(400) + 'world';
-  project.highlights = project.highlights.filter(mark => mark.paragraphId !== project.source.paragraphs[0].id);
   project.vocabulary[0].word = 'W'.repeat(100);
   project.vocabulary[0].meaning = '超长释义'.repeat(80);
   project.translation.paragraphs[1].text += '，。！？）》'.repeat(200);
@@ -126,7 +125,7 @@ test('corrupt drafts stay recoverable and narrow preview footer matches export s
 test('business IDs cannot collide with internal title or expression keys; vocabulary retains array order', async ({ page }) => {
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
   const project = parseProject(fixture);
-  project.highlights = [{ id: 'h', paragraphId: 'title', start: 0, end: 7, quote: 'Article' }];
+  project.vocabulary[0].highlight = ['Article'];
   project.source.paragraphs = [{ id: 'title', text: 'Article with title ID.' }, { id: 'x-1:example', text: 'Article with expression ID.' }];
   await page.evaluate(input => window.renderProject(input), project);
   await expect(page.locator('.article[data-source="title"]')).toHaveText('Article with title ID.');
@@ -138,7 +137,7 @@ test('business IDs cannot collide with internal title or expression keys; vocabu
 test('manual break with mainIdea paragraph ID affects only the chosen logical block', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const project = parseProject(fixture);
-  project.highlights = []; project.vocabulary = []; project.expressions = [];
+  project.vocabulary = []; project.expressions = [];
   project.source.paragraphs = [{ id: 'mainIdea', text: 'A short article.' }];
   project.translation.paragraphs = []; project.mainIdea = 'Short summary.';
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'project.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import fixture from '../assets/projects/brainco/project.json';
-import { parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
+import { collectHighlights, parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
 
 describe('project persistence and precise highlights', () => {
   it('defaults missing personalized headers and preserves custom or empty values', () => {
@@ -32,21 +32,22 @@ describe('project persistence and precise highlights', () => {
     expect(() => parseProject({ ...project, styles: { ...defaults, bodySize: 10000 } })).toThrow();
     expect(() => parseProject({ ...project, highlights: [{ id: 'bad', paragraphId: 'en-1', start: 0, end: 3, quote: 'bad' }] })).toThrow();
   });
-  it('marks and removes only selected occurrence', () => {
+  it('marks and removes all occurrences through an entry rule', () => {
     let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
     project = toggleHighlight(project, 'p', 0, 4);
+    expect(collectHighlights(project)).toHaveLength(2);
     project = toggleHighlight(project, 'p', 5, 9);
-    project = toggleHighlight(project, 'p', 0, 4);
-    expect(project.highlights).toMatchObject([{ paragraphId: 'p', start: 5, end: 9, quote: 'word' }]);
+    expect(collectHighlights(project)).toEqual([]);
+    expect(project.vocabulary.find(entry => entry.word === 'word')?.highlight).toEqual([]);
   });
-  it('moves intervals on insertion, invalidates changed quote explicitly', () => {
+  it('derives positions from current text without storing offsets', () => {
     let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
     project = toggleHighlight(project, 'p', 5, 9);
     project = editParagraph(project, 'p', 'new word word');
-    expect(project.highlights[0]).toMatchObject({ start: 9, end: 13, quote: 'word' });
+    expect(collectHighlights(project)).toMatchObject([{ start: 4, end: 8, quote: 'word' }, { start: 9, end: 13, quote: 'word' }]);
     project = editParagraph(project, 'p', 'new word changed');
-    expect(project.highlights).toHaveLength(0);
-    expect(project.warnings.join(' ')).toContain('高亮');
+    expect(collectHighlights(project)).toHaveLength(1);
+    expect(project.vocabulary.find(entry => entry.word === 'word')?.highlight).toEqual(['word']);
   });
   it('round-trips page breaks for maximum-length IDs, including JSON escapes', () => {
     const paragraphId = '\u0001'.repeat(200);
@@ -58,11 +59,11 @@ describe('project persistence and precise highlights', () => {
   });
   it('migrates highlights with long source and hint IDs into persistable unique IDs', () => {
     const project = parseProject({
-      ...fixture, source: { paragraphs: [{ id: 'p'.repeat(200), text: 'word word' }] },
+      ...fixture, schemaVersion: 1, source: { paragraphs: [{ id: 'p'.repeat(200), text: 'word word' }] },
       highlights: [{ id: 'h'.repeat(200), text: 'word' }],
     });
-    expect(project.highlights.map(mark => [mark.start, mark.end, mark.quote])).toEqual([[0, 4, 'word'], [5, 9, 'word']]);
-    expect(new Set(project.highlights.map(mark => mark.id)).size).toBe(2);
+    expect(collectHighlights(project).map(mark => [mark.start, mark.end, mark.quote])).toEqual([[0, 4, 'word'], [5, 9, 'word']]);
+    expect(project.vocabulary.find(entry => entry.word === 'word')?.id.length).toBeLessThanOrEqual(200);
     expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
   });
 });

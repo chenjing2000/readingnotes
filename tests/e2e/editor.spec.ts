@@ -90,13 +90,13 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   }
 });
 
-test('selected occurrence highlight and preview navigation', async ({ page }) => {
+test('entry rule highlights all occurrences and keeps preview navigation', async ({ page }) => {
   await page.goto('/'); await ready(page);
   await load(page, { ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
   const input = page.getByLabel('英文段落 1', { exact: true });
   await input.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 9); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click(); await ready(page);
-  await expect(page.locator('.card .hot')).toHaveText('word');
+  await expect(page.locator('.card .hot')).toHaveText(['word', 'word']);
   await input.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 9); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click(); await ready(page);
   await expect(page.locator('.card .hot')).toHaveCount(0);

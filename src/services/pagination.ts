@@ -1,4 +1,4 @@
-import { layoutKey, type Project, type Styles } from '../models/project';
+import { collectHighlights, layoutKey, type HighlightRange, type Project, type Styles } from '../models/project';
 import type { LayoutDiagnostics, LayoutRecord } from './layoutVerification';
 
 export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string }[] };
@@ -35,7 +35,7 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
   return { fontSize: `${fontSize}px`, lineHeight: String(lineHeight), fontWeight, color, fontFamily: FONT, letterSpacing: block.kind === 'article' ? '-0.2px' : 'normal' };
 }
 
-function appendText(element: HTMLElement, project: Project, block: Block, start: number, end: number) {
+function appendText(element: HTMLElement, project: Project, block: Block, start: number, end: number, highlights: HighlightRange[]) {
   const label = EXPRESSION_LABELS[block.kind];
   const content = label ? document.createElement('span') : element;
   if (label) {
@@ -45,7 +45,7 @@ function appendText(element: HTMLElement, project: Project, block: Block, start:
     }
     content.className = 'line-content'; element.append(content);
   }
-  const marks = block.kind === 'article' ? project.highlights.filter(mark => mark.paragraphId === block.id && mark.start < end && mark.end > start) : [];
+  const marks = block.kind === 'article' ? highlights.filter(mark => mark.paragraphId === block.id && mark.start < end && mark.end > start) : [];
   const runs = block.runs?.filter(run => run.start < end && run.end > start) ?? [];
   const boundaries = [...new Set([start, end, ...marks.flatMap(mark => [Math.max(start, mark.start), Math.min(end, mark.end)]), ...runs.flatMap(run => [Math.max(start, run.start), Math.min(end, run.end)])])].sort((first, second) => first - second);
   for (let index = 0; index < boundaries.length - 1; index++) {
@@ -65,10 +65,10 @@ function appendText(element: HTMLElement, project: Project, block: Block, start:
   }
 }
 
-export function measureLines(project: Project, block: Block, width: number, host: HTMLElement, fitWidth = width): Line[] {
+export function measureLines(project: Project, block: Block, width: number, host: HTMLElement, fitWidth = width, highlights = collectHighlights(project)): Line[] {
   const measure = document.createElement('div');
   Object.assign(measure.style, typography(block, project.styles), { width: `${width}px`, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', textIndent: block.indent ? '2em' : '0' });
-  appendText(measure, project, block, 0, block.text.length);
+  appendText(measure, project, block, 0, block.text.length, highlights);
   host.append(measure);
   const computed = getComputedStyle(measure);
   const measureLeft = measure.getBoundingClientRect().left;
@@ -118,7 +118,7 @@ export function measureLines(project: Project, block: Block, width: number, host
   lines.push({ block, start: lineStart, end: block.text.length, indent: !!block.indent && lineStart === 0, height });
   measure.remove();
   for (const line of lines) {
-    const probe = renderLine(project, line, fitWidth); host.append(probe);
+    const probe = renderLine(project, line, fitWidth, highlights); host.append(probe);
     const left = probe.getBoundingClientRect().left;
     const textNodes = document.createTreeWalker(probe, NodeFilter.SHOW_TEXT);
     let node: Node | null;
@@ -135,7 +135,7 @@ export function measureLines(project: Project, block: Block, width: number, host
   if (farthestRight > fitWidth + .1) {
     if (width <= widestGlyph + 1) throw new Error(`内容 ${block.id} 的单个字形无法放入当前栏宽，请减小字号或边距。`);
     host.dataset.adjustedWrap = 'true';
-    return measureLines(project, block, width - Math.ceil(widestGlyph), host, fitWidth);
+    return measureLines(project, block, width - Math.ceil(widestGlyph), host, fitWidth, highlights);
   }
   // Range heights round to device pixels at different display scales. Canvas font metrics
   // stay in CSS pixels; allow one pixel per edge for raster rounding without changing pagination by DPI.
@@ -144,18 +144,19 @@ export function measureLines(project: Project, block: Block, width: number, host
   return lines.map(line => ({ ...line, height: safeHeight }));
 }
 
-function renderLine(project: Project, line: Line, width: number) {
+function renderLine(project: Project, line: Line, width: number, highlights: HighlightRange[]) {
   const element = document.createElement('div');
   element.className = `text-line ${line.block.kind}`;
   Object.assign(element.style, typography(line.block, project.styles), { width: `${width}px`, height: `${line.height}px`, lineHeight: `${line.height}px`, whiteSpace: 'pre', textIndent: line.indent ? '2em' : '0' });
   element.dataset.source = line.block.id; element.dataset.start = String(line.start); element.dataset.end = String(line.end);
   element.dataset.kind = line.block.kind;
   element.dataset.key = layoutKey(line.block.kind, line.block.id);
-  appendText(element, project, line.block, line.start, line.end);
+  appendText(element, project, line.block, line.start, line.end, highlights);
   return element;
 }
 
 export async function paginate(project: Project): Promise<Layout> {
+  const highlights = collectHighlights(project);
   const host = document.createElement('div'); host.className = 'measurement';
   Object.assign(host.style, { position: 'absolute', left: '-20000px', top: '0', visibility: 'hidden' });
   document.body.append(host);
@@ -211,7 +212,7 @@ export async function paginate(project: Project): Promise<Layout> {
       Object.assign(row.style, { position: 'absolute', left: '0', top: `${used}px`, display: 'flex', gap: '36px', width: `${width}px`, height: `${height}px` });
       lines.forEach(line => {
         if (line) {
-          const element = renderLine(project, line, columnWidth); row.append(element);
+          const element = renderLine(project, line, columnWidth, highlights); row.append(element);
           const key = layoutKey(line.block.kind, line.block.id);
           const source = coverage.get(key) ?? { original: line.block.text, pieces: [] };
           source.pieces.push({ start: line.start, end: line.end }); coverage.set(key, source);
@@ -222,7 +223,7 @@ export async function paginate(project: Project): Promise<Layout> {
     }
     function block(value: Block) {
       if (project.layoutOverrides.manualPageBreaks.includes(layoutKey(value.kind, value.id)) && used > 0) newPage();
-      const lines = measureLines(project, value, width, host);
+      const lines = measureLines(project, value, width, host, width, highlights);
       lines.forEach((line, index) => addRow([line], width, index === 0 ? (value.gap ?? 0) : 0));
     }
     block({ id: 'title', text: project.title, kind: 'title', gap: 0 });
@@ -243,7 +244,7 @@ export async function paginate(project: Project): Promise<Layout> {
             const start = text.length; text += entry[field] ?? '';
             runs.push({ start, end: text.length, kind: field });
           }
-          return measureLines(project, { id: entry.id, text, kind: 'vocab', runs }, columnWidth, host);
+          return measureLines(project, { id: entry.id, text, kind: 'vocab', runs }, columnWidth, host, columnWidth, highlights);
         });
         if (entries.some(entry => entry && project.layoutOverrides.manualPageBreaks.includes(layoutKey('vocab', entry.id))) && used > 0) newPage();
         for (let lineIndex = 0; lineIndex < Math.max(...columns.map(column => column.length)); lineIndex++) addRow([columns[0][lineIndex], columns[1][lineIndex]], columnWidth, lineIndex === 0 ? 15 : 0);

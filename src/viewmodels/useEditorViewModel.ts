@@ -89,11 +89,13 @@ export function useEditorViewModel() {
     update(current => ({ ...current, [key]: { paragraphs: [...current[key].paragraphs, { id: newId(), text: '' }] } }));
   }
   function removeParagraph(key: ParagraphCollection, id: string) {
-    update(current => ({ ...current, [key]: { paragraphs: current[key].paragraphs.filter(item => item.id !== id) }, highlights: key === 'source' ? current.highlights.filter(mark => mark.paragraphId !== id) : current.highlights }));
+    update(current => ({ ...current, [key]: { paragraphs: current[key].paragraphs.filter(item => item.id !== id) } }));
   }
   function highlightRange(paragraphId: string, start: number, end: number) {
     if (start === end) { setNotice('请先在英文段落中选择要标注的文字。'); return; }
-    update(current => toggleHighlight(current, paragraphId, start, end));
+    const next = toggleHighlight(project, paragraphId, start, end);
+    if (next === project) { setNotice('请选择完整的单词或词组。'); return; }
+    update(next);
   }
   function setPageBreak(id: string, checked: boolean) {
     update(current => ({ ...current, layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: checked ? [...current.layoutOverrides.manualPageBreaks, id] : current.layoutOverrides.manualPageBreaks.filter(item => item !== id) } }));

@@ -5,7 +5,7 @@ description: Use when a user provides an English article and wants an importable
 
 # 文章转 EnglishNotes 精读卡片 JSON
 
-将用户提供的英文文章整理为 EnglishNotes 可通过“打开 JSON”导入的项目文件，使用 `schemaVersion: 2`。本文包含全部必要约定，可单独上传给 ChatGPT 等 LLM 使用，不要求对方能够访问项目仓库或运行代码。
+将用户提供的英文文章或已有 EnglishNotes 项目整理为可通过“打开 JSON”导入的文件，使用 `schemaVersion: 2`。高亮只由各词汇、表达条目的 `highlight` 列表管理；不要输出顶层 `highlights` 或误拼的 `hightlights`。本文可单独上传给 ChatGPT 等 LLM 使用，不要求访问仓库或运行代码。
 
 ## 输入与交付
 
@@ -30,7 +30,6 @@ description: Use when a user provides an English article and wants an importable
 | `vocabulary` | 词汇对象数组，格式见下文 |
 | `expressions` | 表达对象数组，格式见下文 |
 | `mainIdea` | 主旨字符串，不能写成对象或数组 |
-| `highlights` | 顶层精确区间标注数组；生成时默认 `[]`，导入时由条目 `highlight` 列表自动补充，不要用字符串列表替代 |
 | `theme` | 固定字符串 `classic` |
 | `styles` | 全局样式对象，完整默认值见示例；用户未指定时不自行调整 |
 | `layoutOverrides` | 默认 `{ "manualPageBreaks": [], "elementStyles": {} }` |
@@ -47,14 +46,17 @@ description: Use when a user provides an English article and wants an importable
 - 表达对象：`{ "id": "expr-001", "phrase": "bring people together", "meaning": "让人们相聚", "example": "Small gardens can bring people together.", "exampleTranslation": "小花园能让人们相聚。", "highlight": ["bring people together"] }`。不能把 `phrase` 改名为 `expression`，不能把 `exampleTranslation` 改名为 `translation`。优先用原文中的完整例句；必要时可编写贴合语境的教学例句，但不能当作原文段落或事实引文。
 - 原文中的换行用 JSON 转义 `\n` 表示，双引号和反斜杠分别转义为 `\"`、`\\`。不要在 JSON 字符串中直接写未转义换行。
 
-### ID 和高亮
+### 词典形式整理、ID 和高亮
 
-- 每个词汇、表达都显式给出 **`highlight`（单数）字符串数组**，列出本文中实际出现、应标注的单词或词组表面形式及变体。例如词头 `run` 对应 `["run", "runs", "ran", "running"]`，短语 `take off` 对应 `["take off", "takes off", "took off", "taking off"]`；实际输出只保留本文出现的形式，不必穷举。希望词头本身被标注时也要列入，程序不自动推断词形；无需标注用 `[]`，不能写成字符串、对象或 `null`。旧项目缺少该字段时按 `[]` 处理。
-- 导入 JSON 时，只扫描 `source.paragraphs`，匹配忽略大小写，并要求命中前后不是字母、数字、组合标记或下划线，避免 `run` 命中 `runner`。规则是字面量，不是正则表达式；词组中的连续空白（含段落内部换行）可互相匹配，但不跨两个段落。重复及重叠命中合并；已有手工高亮保留，空白规则忽略。命中后程序自行计算 UTF-16 区间并补入顶层 **`highlights`（复数）**。
-- 普通编辑、保存、导出和草稿恢复不重新扫描，因此手工取消的标注能保留；再次显式导入文件时，仍会按列表补齐命中。如需在以后导入时也不再自动标注某个形式，应从对应列表中移除它。
-- 项目、所有原文段落、译文段落、词汇、表达、高亮的 ID 必须**全局唯一**，不能让中英文段落共用同一 ID。推荐使用上文带类型前缀的可读 ID，不必生成 UUID。修改已有项目时保留未删除对象的 ID。
-- 不依赖 LLM 心算字符位置，默认输出顶层 `highlights: []`，用条目内的 `highlight` 列表实现自动高亮。如果用户明确要求额外的精确手工区间，且能可靠计算，单项必须为 `{ "id": "highlight-001", "paragraphId": "en-001", "start": 0, "end": 5, "quote": "Small" }`。
-- `paragraphId` 只能引用存在的英文段落；`start`、`end` 为 JavaScript **UTF-16 code unit** 索引，左闭右开，满足 `0 <= start < end <= paragraph.text.length` 且 `paragraph.text.slice(start, end) === quote`。emoji 可能占多个 code unit，不能用 Python 字符个数或肉眼位置代替。计算后不要再规范化原文、引号或换行。
+- 每个词汇、表达都显式给出 **`highlight`（单数）字符串数组**，列出应标注的原文表面形式及变体。例如词头 `run` 对应 `["run", "runs", "ran", "running"]`，短语 `take off` 对应 `["take off", "takes off", "took off", "taking off"]`。新文章生成时只列本文出现的形式，不必穷举；整理已有 JSON 时按后文保留原列表。希望词头本身被标注时也要列入，程序不自动推断词形；无需标注用 `[]`，不能写成字符串、对象或 `null`。旧条目缺少该字段时按 `[]` 处理。
+- 程序手工收集的 `word` 或 `phrase` 可能只是文章里的变体，尚未还原词典形式。整理时结合原文判断词性和词义，将单词还原为相应词典词头（如 `ran` → `run`、名词复数 → 单数），将短语还原为惯用词典形式（如 `took off` → `take off`、`paces back and forth` → `pace back and forth`）。不能仅凭词尾机械还原；同形不同义、不同词性的条目必要时分开，无法确认时保留而不乱改。
+- 将同一词典条目的原始表面形式、已有 `highlight` 列表合并保存到保留条目的 `highlight` 中。例如 `word: "ran", highlight: ["ran"]` 整理为 `word: "run", highlight: ["ran"]`；与已有 `run / runs` 合并时保留两边有效列表的并集。不要因还原词头而丢掉 `ran`、`took off` 等用户选中的形式，也不要把这些形式只写进释义。只删除完全重复的字符串，不改写原文中的拼写或标点。
+- 若已有条目明确为 `highlight: []`，这是未启用或已取消的规则；整理和还原词头不能擅自重新加回它。新文章生成模式按实际词形填写列表，现有 JSON 整理模式则保留用户已启用/取消的状态。
+- 补全与词典形式和原文语境一致的词性、音标、释义；表达补全含义、例句和翻译，保留用户已有的有效内容。项目标题、原文、译文、主旨、页眉和样式等不属于本次词汇整理范围时保持，不为统一词形而改写文章。
+- 高亮只扫描 `source.paragraphs`：忽略大小写，匹配前后不能是字母、数字、组合标记或下划线，避免 `run` 命中 `runner`。规则是字面量而非正则；词组内连续空白或段内换行可互相匹配，不跨段落，重复/重叠命中合并。程序自行计算仅供渲染使用的位置，JSON 不存任何高亮坐标或高亮 ID。
+- 手工标注会将所选完整单词/词组的原形或变体直接收集到词汇或表达条目的列表，部分单词选区会提示重新选择；取消时移除覆盖该选择的规则，其所有命中一起取消。原文编辑、草稿恢复、重新导入及导出都根据同一份条目规则显示，不存在另一个全局高亮总表。
+- 项目、原文段落、译文段落、词汇、表达的 ID 必须全局唯一。修改已有项目时保留未合并对象的 ID；合并词条优先保留已有词典形式条目的 ID，否则保留首个条目的 ID，并将相关手动前换页标记改为保留的 ID。
+- 若输入为旧 JSON，先将顶层 `highlights` 中的 `text` 或 `quote` 归入相应词典条目的 `highlight`，确保原始表面形式不丢失，再删除顶层列表。不得在输出中继续保留它，不要让 LLM 计算 `start`、`end` 或 `paragraphId`。
 
 ### 样式和分页
 
@@ -103,7 +105,6 @@ description: Use when a user provides an English article and wants an importable
     }
   ],
   "mainIdea": "小花园有助于促进人与人之间的联系。",
-  "highlights": [],
   "theme": "classic",
   "styles": {
     "titleSize": 40,
@@ -126,7 +127,7 @@ description: Use when a user provides an English article and wants an importable
 
 ## 交付前自检与本机验证
 
-检查原文无遗漏、JSON 语法有效、所有 ID 唯一、字段名称与类型正确、词汇四字段和表达四字段分离、条目 `highlight` 为字符串数组且与本文形式对应、额外手工高亮区间确实匹配、样式范围合法。不要把可选空数组写成 `null`；不要产生空白占位条目。
+检查原文无遗漏、JSON 语法有效、所有 ID 唯一、词典形式和词性正确、原始变体完整保留在相应 `highlight` 数组、已取消的规则没有被重新启用、没有顶层 `highlights`/`hightlights`、样式范围合法。不要把空数组写成 `null`；没有依据的条目信息留空，不能编造。
 
 有仓库环境时以 `src/models/project.ts` 的实际 `parseProject` 为准。本 skill 的校验脚本复用该函数，不另造一套导入规则。在项目根目录、npm 依赖已安装后运行：
 
@@ -137,4 +138,4 @@ npx.cmd tsx docs/skills/article-to-englishnotes/scripts/validate-project.ts
 npx.cmd tsx docs/skills/article-to-englishnotes/scripts/validate-project.ts "C:\path\article.json"
 ```
 
-脚本复用导入时的匹配函数，报告自动匹配后的高亮区间数量，只校验不改写。通过仅证明模型导入有效，不代表语言质量或所有 UI/分页/导出已经验证。最终可在程序中“打开 JSON”，检查段落、词汇、表达和预览，再保存及导出。
+脚本复用渲染时的匹配函数，报告高亮命中数量，只校验不改写。通过仅证明模型导入有效，不代表词典还原、语言质量或所有 UI/分页/导出已经验证。最终在程序中“打开 JSON”，检查词汇、表达和预览，再保存及导出。

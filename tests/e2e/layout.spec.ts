@@ -47,7 +47,7 @@ test('expressions use four rows and two columns and keep preview navigation', as
 test('colored expression labels appear once and participate in real line measurement', async ({ page }) => {
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
   const project = parseProject(fixture);
-  project.highlights = []; project.source.paragraphs = []; project.vocabulary = [];
+  project.source.paragraphs = []; project.vocabulary = [];
   project.expressions = [
     { id: 'long', phrase: 'A phrase', meaning: '很长的含义。'.repeat(300), example: 'An example sentence. '.repeat(200), exampleTranslation: '很长的例句译文。'.repeat(200), highlight: [] },
     { id: 'empty', phrase: '', meaning: '', example: '', exampleTranslation: '', highlight: [] },

@@ -1,5 +1,5 @@
 import fixture from '../../assets/projects/brainco/project.json';
-import { applyEntryHighlights, parseProject, type Project } from '../models/project';
+import { parseProject, type Project } from '../models/project';
 import type { LayoutDiagnostics } from './layoutVerification';
 
 const DRAFT = 'reading-editor.draft.v2';
@@ -26,7 +26,7 @@ export function cacheDraft(project: Project) {
 }
 
 export async function readProject(file: File) {
-  return applyEntryHighlights(parseProject(JSON.parse(await file.text())));
+  return parseProject(JSON.parse(await file.text()));
 }
 
 export function download(data: Blob, filename: string) {
