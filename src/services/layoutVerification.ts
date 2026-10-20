@@ -8,7 +8,7 @@ export type LayoutDiagnostics = z.infer<typeof diagnosticsSchema>;
 
 export function describeLayoutMismatch(preview: unknown, exported: LayoutDiagnostics): string {
   const parsed = summarySchema.safeParse(preview);
-  if (!parsed.success) return '预览缺少诊断信息，可能仍为旧版页面。请先保存 JSON，再重启服务并刷新页面后重试。';
+  if (!parsed.success) return '预览未附带诊断信息，可能因请求大小限制省略，或仍为旧版页面。请先保存 JSON，再重启服务并刷新页面后重试。';
   const summary = parsed.data;
   if (summary.projectSignature !== exported.projectSignature) return '预览与导出的项目数据不同。请先保存 JSON，再刷新页面；更新代码后请重新构建并重启服务。';
   const complete = diagnosticsSchema.safeParse(preview);

@@ -6,6 +6,10 @@ export type Line = { block: Block; start: number; end: number; indent: boolean; 
 export type Layout = { pages: HTMLElement[]; signature: string; warnings: string[]; diagnostics: LayoutDiagnostics };
 const FONT = '"Nunito Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif';
 const EXPRESSION_LABELS: Partial<Record<string, string>> = { meaning: '含义：', example: '例句：', exampleTranslation: '翻译：' };
+const LABELS = {
+  header: 'ENGLISH READING', footer: 'ARTICLE - VOCABULARY- EXPRESSIONS - MAIN IDEA - TRANSLATION',
+  vocabulary: 'VOCABULARY', expressions: 'USEFUL EXPRESSIONS · 有用表达', mainIdea: 'MAIN IDEA · 主要内容', translation: 'CHINESE TRANSLATION · 中文译文',
+};
 
 function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> {
   let fontSize = styles.bodySize;
@@ -156,7 +160,12 @@ export async function paginate(project: Project): Promise<Layout> {
   Object.assign(host.style, { position: 'absolute', left: '-20000px', top: '0', visibility: 'hidden' });
   document.body.append(host);
   try {
-    const fontText = ['含义：例句：翻译：', project.personalizedHeader, project.title, ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text), ...project.vocabulary.map(item => item.word + item.ipa + item.meaning), ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea].join('');
+    const fontText = [
+      ...Object.values(LABELS), ...Object.values(EXPRESSION_LABELS), '0123456789/', project.personalizedHeader, project.title,
+      ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text),
+      ...project.vocabulary.map(item => item.word + (item.ipa ?? '') + item.pos + item.meaning),
+      ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea,
+    ].join('');
     try {
       await Promise.all([document.fonts.load('400 36px "Nunito Sans"', fontText), document.fonts.load('800 36px "Nunito Sans"', fontText), document.fonts.load('400 32px "Noto Sans SC"', fontText), document.fonts.load('700 32px "Noto Sans SC"', fontText)]);
     } catch { throw new Error('本地字体加载失败。请按 README 重新安装依赖并构建，再刷新页面；项目仍可保存 JSON。'); }
@@ -174,7 +183,7 @@ export async function paginate(project: Project): Promise<Layout> {
     const coverage = new Map<string, { original: string; pieces: { start: number; end: number }[] }>();
     function newPage() {
       const page = document.createElement('section'); page.className = 'card'; page.dataset.page = String(pages.length + 1);
-      const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = 'ENGLISH READING';
+      const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = LABELS.header;
       const header = document.createElement('header'); header.className = 'page-header';
       Object.assign(header.style, { top: `${styles.marginTop}px`, left: `${styles.marginX}px`, right: `${styles.marginX}px` });
       const personalized = document.createElement('span'); personalized.className = 'eyebrow personalized-header'; personalized.textContent = project.personalizedHeader;
@@ -183,7 +192,7 @@ export async function paginate(project: Project): Promise<Layout> {
       Object.assign(pageBody.style, { top: `${bodyTop}px`, left: `${styles.marginX}px`, width: `${width}px`, height: `${bodyHeight}px` });
       const footer = document.createElement('footer'); footer.className = 'footer';
       Object.assign(footer.style, { left: `${styles.marginX}px`, right: `${styles.marginX}px` });
-      const label = document.createElement('span'); label.textContent = 'ARTICLE - VOCABULARY- EXPRESSIONS - MAIN IDEA - TRANSLATION';
+      const label = document.createElement('span'); label.textContent = LABELS.footer;
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d')!; context.font = '17px "Nunito Sans"';
       const labelWidth = context.measureText(label.textContent).width + .4 * label.textContent.length;
@@ -219,7 +228,7 @@ export async function paginate(project: Project): Promise<Layout> {
     block({ id: 'title', text: project.title, kind: 'title', gap: 0 });
     project.source.paragraphs.forEach(item => block({ ...item, kind: 'article', indent: true, gap: styles.paragraphGap }));
     if (project.vocabulary.length) {
-      block({ id: 'vocab-heading', text: 'VOCABULARY', kind: 'vocab-heading', gap: 25 });
+      block({ id: 'vocab-heading', text: LABELS.vocabulary, kind: 'vocab-heading', gap: 25 });
       const middle = Math.ceil(project.vocabulary.length / 2);
       const columnWidth = (width - 36) / 2;
       for (let index = 0; index < middle; index++) {
@@ -240,13 +249,13 @@ export async function paginate(project: Project): Promise<Layout> {
         for (let lineIndex = 0; lineIndex < Math.max(...columns.map(column => column.length)); lineIndex++) addRow([columns[0][lineIndex], columns[1][lineIndex]], columnWidth, lineIndex === 0 ? 15 : 0);
       }
     }
-    block({ id: 'expressions-heading', text: 'USEFUL EXPRESSIONS · 有用表达', kind: 'section-heading', gap: 25 });
+    block({ id: 'expressions-heading', text: LABELS.expressions, kind: 'section-heading', gap: 25 });
     for (const entry of project.expressions) for (const field of ['phrase', 'meaning', 'example', 'exampleTranslation'] as const) {
       block({ id: `${entry.id}:${field}`, text: entry[field], kind: field, gap: field === 'phrase' ? 20 : field === 'example' ? 10 : 7 });
     }
-    block({ id: 'main-heading', text: 'MAIN IDEA · 主要内容', kind: 'section-heading', gap: 25 });
+    block({ id: 'main-heading', text: LABELS.mainIdea, kind: 'section-heading', gap: 25 });
     block({ id: 'mainIdea', text: project.mainIdea, kind: 'mainIdea', gap: 14 });
-    block({ id: 'translation-heading', text: 'CHINESE TRANSLATION · 中文译文', kind: 'section-heading', gap: 25 });
+    block({ id: 'translation-heading', text: LABELS.translation, kind: 'section-heading', gap: 25 });
     project.translation.paragraphs.forEach(item => block({ ...item, kind: 'translation', indent: true, gap: styles.paragraphGap }));
     for (const [id, source] of coverage) {
       let cursor = 0;

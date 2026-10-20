@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T13:30:15.343Z",
+  "generatedAt": "2026-10-20T13:56:53.072Z",
   "productionMode": true,
   "pageCount": 4,
   "dimensions": [
@@ -15,6 +15,6 @@
     "page-02.png": "b2d778f4584adb3036fefd1b5296b22ea1754d9a80d9c371cc517fe7c7221a98",
     "page-03.png": "1762e7d75f329e2e4c8aa8ed8f1ec8ebed4fcc922f400f77cb14746c354d0da0",
     "page-04.png": "77b97d3cdd4b8951611816de8603762a658688a67baafdf3f959d7c07ba11081",
-    "project.json": "730423b0b9cc7c7779256ece3770214aba734ed868bedf2d320f6dc83f453988"
+    "project.json": "d811f682d3f60e2bd40e68dd20fa863a96fe46f3da89f19bdfaf27d76eef0ac8"
   }
 }

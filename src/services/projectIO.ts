@@ -40,6 +40,7 @@ export async function requestExport(project: Project, signature: string, page?: 
   let body = JSON.stringify(snapshot);
   // Repeated long IDs in line records must not consume the project's 5 MiB request budget.
   if (diagnostics && new Blob([body]).size > 5 * 1024 * 1024) body = JSON.stringify({ ...snapshot, diagnostics: { projectSignature: diagnostics.projectSignature, pages: diagnostics.pages } });
+  if (diagnostics && new Blob([body]).size > 5 * 1024 * 1024) body = JSON.stringify({ project, signature, page });
   const response = await fetch('/api/export', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
   if (!response.ok) throw new Error(await response.text());
   return response.blob();

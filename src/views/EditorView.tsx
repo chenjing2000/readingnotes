@@ -14,6 +14,9 @@ export default function EditorView() {
   const [zoom, setZoom] = useState(0.46);
   const preview = useRef<HTMLDivElement>(null);
   const inputs = useRef(new Map<string, HTMLInputElement | HTMLTextAreaElement>());
+  function registerInput(id: string, input: HTMLInputElement | HTMLTextAreaElement | null) {
+    if (input) inputs.current.set(id, input); else inputs.current.delete(id);
+  }
   const [focusId, setFocusId] = useState('');
   useLayoutEffect(() => {
     if (!layout) return;
@@ -38,7 +41,7 @@ export default function EditorView() {
     else if (kind === 'translation' || kind === 'mainIdea') { setTab('主旨与译文'); setFocusId(kind === 'mainIdea' ? 'project:mainIdea' : `translation:${id}`); }
   }
   function field(label: string, value: string, onChange: (value: string) => void, id?: string, rows = 2) {
-    return <label className="field" key={label}><span>{label}</span><textarea aria-label={label} value={value} rows={rows} ref={element => { if (id && element) inputs.current.set(id, element); }} onChange={event => onChange(event.target.value)} /></label>;
+    return <label className="field" key={label}><span>{label}</span><textarea aria-label={label} value={value} rows={rows} ref={element => { if (id) registerInput(id, element); }} onChange={event => onChange(event.target.value)} /></label>;
   }
   function breakControl(id: string, label: string) {
     return <label className="break-control"><input type="checkbox" aria-label={`${label} 前换页`} checked={project.layoutOverrides.manualPageBreaks.includes(id)} onChange={event => vm.setPageBreak(id, event.target.checked)} />前换页</label>;
@@ -52,7 +55,7 @@ export default function EditorView() {
       <table className="expression-table" aria-label={`表达 ${index + 1}`}><tbody>{Object.entries(labels).map(([property, label]) =>
         <tr key={property}><th scope="row">{label}</th><td><AutoSizeTextarea label={`${label} ${index + 1}`}
           value={entry[property as keyof typeof labels]}
-          inputRef={input => { const id = `${key}:${entry.id}:${property}`; if (input) inputs.current.set(id, input); else inputs.current.delete(id); }}
+          inputRef={input => registerInput(`${key}:${entry.id}:${property}`, input)}
           onChange={value => vm.setEntryField(key, entry.id, property, value)} /></td></tr>
       )}</tbody></table>
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
@@ -84,7 +87,7 @@ export default function EditorView() {
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('source')}>添加英文段落</button>
         </>}
-        {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={(id, input) => { if (input) inputs.current.set(id, input); else inputs.current.delete(id); }} focusField={setFocusId} />}
+        {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={registerInput} focusField={setFocusId} />}
         {tab === '表达' && expressions()}
         {tab === '主旨与译文' && <>
           {field('Main Idea', project.mainIdea, value => vm.setProjectText('mainIdea', value), 'project:mainIdea', 4)}
