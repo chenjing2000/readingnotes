@@ -22,14 +22,21 @@ test('export diagnoses project and line differences without misleading installat
   await expect(alert).not.toContainText('Error:');
 });
 
-test('installed Chrome preview can export through bundled Chromium', async ({ baseURL }) => {
-  const browser = await chromium.launch({ channel: 'chrome' });
+for (const scale of [1, 1.25, 1.5, 2]) test(`installed Chrome at ${scale * 100}% device scale exports through bundled Chromium`, async ({ baseURL }) => {
+  const browser = await chromium.launch({ channel: 'chrome', args: [`--force-device-scale-factor=${scale}`] });
   try {
-    const page = await browser.newPage();
+    const page = await browser.newPage({ viewport: null });
     await page.goto(baseURL!); await expect(page.locator('[data-ready="true"]')).toBeVisible();
+    expect(await page.evaluate(() => devicePixelRatio)).toBeCloseTo(scale, 2);
+    expect(await page.locator('.preview [data-source]').evaluateAll(lines => lines.every(line => {
+      const body = line.closest('.page-body')!.getBoundingClientRect();
+      const range = document.createRange(); range.selectNodeContents(line);
+      const text = range.getBoundingClientRect();
+      return text.bottom <= body.bottom + .75 && text.top >= body.top - .75;
+    }))).toBe(true);
     const snapshot = await page.evaluate(() => window.editor);
     const response = await page.request.post(`${baseURL}/api/export`, { data: { ...snapshot, page: 1 } });
-    expect(response.ok(), await response.text()).toBe(true);
+    expect(response.ok(), response.ok() ? '' : await response.text()).toBe(true);
     const image = await response.body();
     expect(image.readUInt32BE(16)).toBe(1200); expect(image.readUInt32BE(20)).toBe(1600);
   } finally { await browser.close(); }

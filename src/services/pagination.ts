@@ -78,7 +78,15 @@ export function measureLines(project: Project, block: Block, width: number, host
   while ((current = walker.nextNode())) { nodes.push({ node: current as Text, start: total, end: total + current.textContent!.length }); total += current.textContent!.length; }
   const range = document.createRange();
   let nodeIndex = 0, lineStart = 0, previousTop: number | undefined;
-  let glyphHeight = measure.querySelector('.expression-label')?.getBoundingClientRect().height ?? 0;
+  const context = document.createElement('canvas').getContext('2d')!;
+  function fontHeight(element: HTMLElement) {
+    const style = getComputedStyle(element);
+    context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const metrics = context.measureText(element.textContent || 'Mg');
+    return Math.max(metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent, metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent);
+  }
+  let glyphHeight = fontHeight(measure);
+  for (const element of measure.querySelectorAll<HTMLElement>('span,strong')) glyphHeight = Math.max(glyphHeight, fontHeight(element));
   let farthestRight = 0, widestGlyph = 0;
   const lines: Line[] = [];
   const segments = new Intl.Segmenter('en', { granularity: 'grapheme' }).segment(block.text);
@@ -92,7 +100,6 @@ export function measureLines(project: Project, block: Block, width: number, host
     if (!first || !last) throw new Error(`无法测量内容 ${block.id}`);
     range.setStart(first.node, start - first.start); range.setEnd(last.node, end - last.start);
     const rect = range.getBoundingClientRect();
-    glyphHeight = Math.max(glyphHeight, rect.height);
     if (segment.segment.trim()) {
       farthestRight = Math.max(farthestRight, rect.right - measureLeft);
       widestGlyph = Math.max(widestGlyph, rect.width);
@@ -126,7 +133,9 @@ export function measureLines(project: Project, block: Block, width: number, host
     host.dataset.adjustedWrap = 'true';
     return measureLines(project, block, width - Math.ceil(widestGlyph), host, fitWidth);
   }
-  const safeHeight = Math.max(height, glyphHeight);
+  // Range heights round to device pixels at different display scales. Canvas font metrics
+  // stay in CSS pixels; allow one pixel per edge for raster rounding without changing pagination by DPI.
+  const safeHeight = Math.max(height, Math.ceil(glyphHeight) + 2);
   if (safeHeight > height + .1) host.dataset.adjustedLineHeight = 'true';
   return lines.map(line => ({ ...line, height: safeHeight }));
 }
