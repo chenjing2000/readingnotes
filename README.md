@@ -34,6 +34,19 @@ src/
 
 View 通过 ViewModel 执行编辑命令，ViewModel 调用 Model 与 Services；浏览器存储、文件读取和网络请求集中在 Services。分页仍使用原 DOM 实测引擎，View 只负责把返回的页面片段挂到预览容器。
 
+## 项目 skills 与 LLM 生成 JSON
+
+- [项目代码审查 skill](docs/skills/project-code-review/SKILL.md)：包含本程序的轻量 MVVM 分层、依赖方向与数据格式同步要求。
+- [文章转项目 JSON skill](docs/skills/article-to-englishnotes/SKILL.md)：自包含 schema 2 数据契约、完整有效示例、原文/翻译/词汇/表达整理规则、样式默认值及高亮约束。可将该 `SKILL.md` 与文章一起上传给 ChatGPT 等 LLM，并要求：“严格按 skill，将这篇文章生成 EnglishNotes 可导入的完整 JSON，只输出 JSON，不加 Markdown 围栏。”
+
+将生成结果保存为 UTF-8 `.json`，在程序中“打开 JSON”。在本项目根目录也可先验证：
+
+```powershell
+npx.cmd tsx docs/skills/article-to-englishnotes/scripts/validate-project.ts "C:\path\article.json"
+```
+
+不传文件参数时验证 skill 内的完整示例与程序默认值。脚本只校验，不改写输入；调用实际 Model 导入规则，不要求运行本机服务或 Chromium。通过不代表语言质量或图片排版已验证，导入后仍需检查内容和预览。项目 skill 文件存放在 `docs/skills/`，不会自动安装到全局技能目录。
+
 ## Windows 首次安装与运行
 
 先安装 Node.js 24，或至少 Node.js 22.12。本次实际验证环境为 Windows、Node 24.19.0、npm 11.17.0。
