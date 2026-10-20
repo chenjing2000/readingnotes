@@ -49,8 +49,8 @@ test('colored expression labels appear once and participate in real line measure
   const project = parseProject(fixture);
   project.highlights = []; project.source.paragraphs = []; project.vocabulary = [];
   project.expressions = [
-    { id: 'long', phrase: 'A phrase', meaning: '很长的含义。'.repeat(300), example: 'An example sentence. '.repeat(200), exampleTranslation: '很长的例句译文。'.repeat(200) },
-    { id: 'empty', phrase: '', meaning: '', example: '', exampleTranslation: '' },
+    { id: 'long', phrase: 'A phrase', meaning: '很长的含义。'.repeat(300), example: 'An example sentence. '.repeat(200), exampleTranslation: '很长的例句译文。'.repeat(200), highlight: [] },
+    { id: 'empty', phrase: '', meaning: '', example: '', exampleTranslation: '', highlight: [] },
   ];
   await page.evaluate(input => window.renderProject(input), project);
   for (const [field, label] of [['meaning', '含义：'], ['example', '例句：'], ['exampleTranslation', '翻译：']] as const) {

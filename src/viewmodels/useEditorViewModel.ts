@@ -105,7 +105,7 @@ export function useEditorViewModel() {
     update(current => ({ ...current, [key]: current[key].map(item => item.id === id ? { ...item, [property]: value } : item) }));
   }
   function addEntry(key: EntryCollection) {
-    update(current => ({ ...current, [key]: [...current[key], key === 'vocabulary' ? { id: newId(), word: '', pos: '', meaning: '', ipa: '' } : { id: newId(), phrase: '', meaning: '', example: '', exampleTranslation: '' }] }));
+    update(current => ({ ...current, [key]: [...current[key], key === 'vocabulary' ? { id: newId(), word: '', pos: '', meaning: '', ipa: '', highlight: [] } : { id: newId(), phrase: '', meaning: '', example: '', exampleTranslation: '', highlight: [] }] }));
   }
   function removeEntry(key: EntryCollection, id: string) {
     update(current => ({ ...current, [key]: current[key].filter(item => item.id !== id) }));
@@ -123,7 +123,7 @@ export function useEditorViewModel() {
     removeEntry('vocabulary', selectedVocabulary.id);
   }
   function insertVocabularyBelow() {
-    const entry = { id: newId(), word: '', ipa: '', pos: '', meaning: '' };
+    const entry = { id: newId(), word: '', pos: '', meaning: '', ipa: '', highlight: [] };
     update(current => {
       const vocabulary = [...current.vocabulary];
       const index = vocabulary.findIndex(item => item.id === selectedVocabulary?.id);

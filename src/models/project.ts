@@ -19,12 +19,13 @@ const pageBreakKey = z.string().min(1).max(2048);
 const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(value), '含无效控制字符或乱码替代符');
 const paragraph = z.object({ id, text });
 const highlight = z.object({ id, paragraphId: id, start: z.number().int().nonnegative(), end: z.number().int().positive(), quote: text });
+const variants = z.array(text).max(2000).default([]);
 const common = {
   id, title: text, personalizedHeader: text.default('SOME BIRDS ON TREE'), readingLevel: z.number().optional(),
   source: z.object({ paragraphs: z.array(paragraph).max(500) }),
   translation: z.object({ paragraphs: z.array(paragraph).max(500) }),
-  vocabulary: z.array(z.object({ id, word: text, pos: text, meaning: text, ipa: text.optional() })).max(2000),
-  expressions: z.array(z.object({ id, phrase: text, meaning: text, example: text, exampleTranslation: text })).max(2000),
+  vocabulary: z.array(z.object({ id, word: text, pos: text, meaning: text, ipa: text.optional(), highlight: variants })).max(2000),
+  expressions: z.array(z.object({ id, phrase: text, meaning: text, example: text, exampleTranslation: text, highlight: variants })).max(2000),
   mainIdea: text,
   theme: z.literal('classic').default('classic'),
   layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
@@ -74,6 +75,48 @@ export function parseProject(input: unknown): Project {
     return matches.length ? matches.map(([kind, id]) => layoutKey(kind, id)) : [key];
   }))];
   return project;
+}
+
+export function applyEntryHighlights(project: Project): Project {
+  const terms = new Set([...project.vocabulary, ...project.expressions].flatMap(entry => entry.highlight.map(term => term.trim().replace(/\s+/gu, ' '))).filter(Boolean));
+  if (!terms.size) return project;
+  const patterns = [...terms].map(term => new RegExp('(?<![\\p{L}\\p{N}\\p{M}_])' + term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/gu, '\\s+') + '(?![\\p{L}\\p{N}\\p{M}_])', 'giu'));
+  const added: Project['highlights'] = [];
+  for (const paragraph of project.source.paragraphs) {
+    const matches: { start: number; end: number }[] = [];
+    for (const pattern of patterns) {
+      pattern.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(paragraph.text))) {
+        matches.push({ start: match.index, end: match.index + match[0].length });
+        // Also find overlapping phrase occurrences, advancing by a whole Unicode code point.
+        pattern.lastIndex = match.index + (paragraph.text.codePointAt(match.index)! > 0xffff ? 2 : 1);
+      }
+    }
+    matches.sort((left, right) => left.start - right.start || right.end - left.end);
+    const merged: typeof matches = [];
+    for (const match of matches) {
+      const previous = merged.at(-1);
+      if (previous && match.start < previous.end) previous.end = Math.max(previous.end, match.end);
+      else merged.push({ ...match });
+    }
+    const existing = project.highlights.filter(mark => mark.paragraphId === paragraph.id).sort((left, right) => left.start - right.start);
+    function add(start: number, end: number) {
+      added.push({ id: newId(), paragraphId: paragraph.id, start, end, quote: paragraph.text.slice(start, end) });
+    }
+    // Preserve manual mark IDs; add only portions not already highlighted.
+    for (const match of merged) {
+      let cursor = match.start;
+      for (const mark of existing) {
+        if (mark.end <= cursor || mark.start >= match.end) continue;
+        if (mark.start > cursor) add(cursor, mark.start);
+        cursor = Math.max(cursor, mark.end);
+        if (cursor >= match.end) break;
+      }
+      if (cursor < match.end) add(cursor, match.end);
+    }
+  }
+  return added.length ? { ...project, highlights: [...project.highlights, ...added] } : project;
 }
 
 export function editParagraph(project: Project, paragraphId: string, next: string): Project {

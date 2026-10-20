@@ -30,7 +30,7 @@ description: Use when a user provides an English article and wants an importable
 | `vocabulary` | 词汇对象数组，格式见下文 |
 | `expressions` | 表达对象数组，格式见下文 |
 | `mainIdea` | 主旨字符串，不能写成对象或数组 |
-| `highlights` | 精确区间标注数组；默认 `[]`，不要用词汇列表或纯字符串替代 |
+| `highlights` | 顶层精确区间标注数组；生成时默认 `[]`，导入时由条目 `highlight` 列表自动补充，不要用字符串列表替代 |
 | `theme` | 固定字符串 `classic` |
 | `styles` | 全局样式对象，完整默认值见示例；用户未指定时不自行调整 |
 | `layoutOverrides` | 默认 `{ "manualPageBreaks": [], "elementStyles": {} }` |
@@ -43,14 +43,17 @@ description: Use when a user provides an English article and wants an importable
 ### 段落、词汇和表达
 
 - 段落必须是对象，不能直接用字符串数组。每个原文段落放在 `source.paragraphs`，每个译文段落放在 `translation.paragraphs`；生成时按段落一一对应，分别使用 `en-001` 与 `zh-001` 等不同 ID。程序允许独立编辑两组段落，一一对应是本 skill 的生成约定。
-- 词汇对象：`{ "id": "vocab-001", "word": "seed", "ipa": "/siːd/", "pos": "n.", "meaning": "种子" }`。`word` 为单词或词头，`ipa` 为音标，`pos` 为语境中的词性，`meaning` 为对应中文释义。词性单独写在 `pos`，不要拼入释义；用 `n.`、`v.`、`adj.`、`adv.` 等简明形式，存在多种适用词性时可写一个字符串。音标不能确定时用 `"ipa": ""`，不要编造。
-- 表达对象：`{ "id": "expr-001", "phrase": "bring people together", "meaning": "让人们相聚", "example": "Small gardens can bring people together.", "exampleTranslation": "小花园能让人们相聚。" }`。不能把 `phrase` 改名为 `expression`，不能把 `exampleTranslation` 改名为 `translation`。优先用原文中的完整例句；必要时可编写贴合语境的教学例句，但不能当作原文段落或事实引文。
+- 词汇对象：`{ "id": "vocab-001", "word": "seed", "ipa": "/siːd/", "pos": "n.", "meaning": "种子", "highlight": ["seeds"] }`。`word` 为单词或词头，`ipa` 为音标，`pos` 为语境中的词性，`meaning` 为对应中文释义。词性单独写在 `pos`，不要拼入释义；用 `n.`、`v.`、`adj.`、`adv.` 等简明形式，存在多种适用词性时可写一个字符串。音标不能确定时用 `"ipa": ""`，不要编造。
+- 表达对象：`{ "id": "expr-001", "phrase": "bring people together", "meaning": "让人们相聚", "example": "Small gardens can bring people together.", "exampleTranslation": "小花园能让人们相聚。", "highlight": ["bring people together"] }`。不能把 `phrase` 改名为 `expression`，不能把 `exampleTranslation` 改名为 `translation`。优先用原文中的完整例句；必要时可编写贴合语境的教学例句，但不能当作原文段落或事实引文。
 - 原文中的换行用 JSON 转义 `\n` 表示，双引号和反斜杠分别转义为 `\"`、`\\`。不要在 JSON 字符串中直接写未转义换行。
 
 ### ID 和高亮
 
+- 每个词汇、表达都显式给出 **`highlight`（单数）字符串数组**，列出本文中实际出现、应标注的单词或词组表面形式及变体。例如词头 `run` 对应 `["run", "runs", "ran", "running"]`，短语 `take off` 对应 `["take off", "takes off", "took off", "taking off"]`；实际输出只保留本文出现的形式，不必穷举。希望词头本身被标注时也要列入，程序不自动推断词形；无需标注用 `[]`，不能写成字符串、对象或 `null`。旧项目缺少该字段时按 `[]` 处理。
+- 导入 JSON 时，只扫描 `source.paragraphs`，匹配忽略大小写，并要求命中前后不是字母、数字、组合标记或下划线，避免 `run` 命中 `runner`。规则是字面量，不是正则表达式；词组中的连续空白（含段落内部换行）可互相匹配，但不跨两个段落。重复及重叠命中合并；已有手工高亮保留，空白规则忽略。命中后程序自行计算 UTF-16 区间并补入顶层 **`highlights`（复数）**。
+- 普通编辑、保存、导出和草稿恢复不重新扫描，因此手工取消的标注能保留；再次显式导入文件时，仍会按列表补齐命中。如需在以后导入时也不再自动标注某个形式，应从对应列表中移除它。
 - 项目、所有原文段落、译文段落、词汇、表达、高亮的 ID 必须**全局唯一**，不能让中英文段落共用同一 ID。推荐使用上文带类型前缀的可读 ID，不必生成 UUID。修改已有项目时保留未删除对象的 ID。
-- 不依赖 LLM 心算字符位置，默认输出 `highlights: []`，导入后可在编辑器标注。如果用户明确要求高亮，且能可靠计算，单项必须为 `{ "id": "highlight-001", "paragraphId": "en-001", "start": 0, "end": 5, "quote": "Small" }`。
+- 不依赖 LLM 心算字符位置，默认输出顶层 `highlights: []`，用条目内的 `highlight` 列表实现自动高亮。如果用户明确要求额外的精确手工区间，且能可靠计算，单项必须为 `{ "id": "highlight-001", "paragraphId": "en-001", "start": 0, "end": 5, "quote": "Small" }`。
 - `paragraphId` 只能引用存在的英文段落；`start`、`end` 为 JavaScript **UTF-16 code unit** 索引，左闭右开，满足 `0 <= start < end <= paragraph.text.length` 且 `paragraph.text.slice(start, end) === quote`。emoji 可能占多个 code unit，不能用 Python 字符个数或肉眼位置代替。计算后不要再规范化原文、引号或换行。
 
 ### 样式和分页
@@ -62,7 +65,7 @@ description: Use when a user provides an English article and wants an importable
 
 ### 容量和禁止内容
 
-- ID 为 1..200 字符；单个正文类字符串最多 300000 字符（按 JavaScript 字符串长度）；原文、译文各最多 500 段，词汇、表达各最多 2000 项。
+- ID 为 1..200 字符；单个正文类字符串（含每条高亮规则）最多 300000 字符（按 JavaScript 字符串长度）；原文、译文各最多 500 段，词汇、表达各最多 2000 项，每个条目的 `highlight` 最多 2000 个字符串。
 - 正文类字段不允许 U+0000..U+0008、U+000B、U+000C、U+000E..U+001F 控制字符及 U+FFFD 乱码替代符。制表符、换行和回车可按 JSON 正确转义。
 - 导出请求体上限为 5 MiB，生成时不要嵌入图片、音频、Base64 或无关资料；超过容量时说明需要拆为多个完整项目，不能悄悄截断正文。
 
@@ -87,7 +90,7 @@ description: Use when a user provides an English article and wants an importable
     ]
   },
   "vocabulary": [
-    { "id": "vocab-001", "word": "garden", "ipa": "/ˈɡɑːdn/", "pos": "n.", "meaning": "花园" }
+    { "id": "vocab-001", "word": "garden", "ipa": "/ˈɡɑːdn/", "pos": "n.", "meaning": "花园", "highlight": ["gardens"] }
   ],
   "expressions": [
     {
@@ -95,7 +98,8 @@ description: Use when a user provides an English article and wants an importable
       "phrase": "bring people together",
       "meaning": "让人们相聚",
       "example": "Small gardens can bring people together.",
-      "exampleTranslation": "小花园能让人们相聚。"
+      "exampleTranslation": "小花园能让人们相聚。",
+      "highlight": ["bring people together"]
     }
   ],
   "mainIdea": "小花园有助于促进人与人之间的联系。",
@@ -122,7 +126,7 @@ description: Use when a user provides an English article and wants an importable
 
 ## 交付前自检与本机验证
 
-检查原文无遗漏、JSON 语法有效、所有 ID 唯一、字段名称与类型正确、词汇四字段和表达四字段分离、高亮区间确实匹配、样式范围合法。不要把可选空数组写成 `null`；不要产生空白占位条目。
+检查原文无遗漏、JSON 语法有效、所有 ID 唯一、字段名称与类型正确、词汇四字段和表达四字段分离、条目 `highlight` 为字符串数组且与本文形式对应、额外手工高亮区间确实匹配、样式范围合法。不要把可选空数组写成 `null`；不要产生空白占位条目。
 
 有仓库环境时以 `src/models/project.ts` 的实际 `parseProject` 为准。本 skill 的校验脚本复用该函数，不另造一套导入规则。在项目根目录、npm 依赖已安装后运行：
 
@@ -133,4 +137,4 @@ npx.cmd tsx docs/skills/article-to-englishnotes/scripts/validate-project.ts
 npx.cmd tsx docs/skills/article-to-englishnotes/scripts/validate-project.ts "C:\path\article.json"
 ```
 
-脚本通过仅证明模型导入有效，不代表语言质量或所有 UI/分页/导出已经验证。最终可在程序中“打开 JSON”，检查段落、词汇、表达和预览，再保存及导出。
+脚本复用导入时的匹配函数，报告自动匹配后的高亮区间数量，只校验不改写。通过仅证明模型导入有效，不代表语言质量或所有 UI/分页/导出已经验证。最终可在程序中“打开 JSON”，检查段落、词汇、表达和预览，再保存及导出。

@@ -10,7 +10,7 @@ test('phrase can finish a page while its meaning and example continue on next', 
   const project = parseProject(fixture);
   project.title = 'Boundary'; project.highlights = []; project.vocabulary = [];
   project.source.paragraphs = [{ id: 'filler', text: 'Filler sentence. '.repeat(70) }];
-  project.expressions = [{ id: 'target', phrase: 'target phrase', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。' }];
+  project.expressions = [{ id: 'target', phrase: 'target phrase', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。', highlight: [] }];
   await page.evaluate(input => window.renderProject(input), project);
   const space = await page.locator('[data-source="target:phrase"]').evaluate(node => {
     const body = node.closest('.page-body')!.getBoundingClientRect();
