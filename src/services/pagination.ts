@@ -273,7 +273,7 @@ export async function paginate(project: Project): Promise<Layout> {
       });
     }
     block({ id: 'main-heading', text: LABELS.mainIdea, kind: 'section-heading', gap: 25 });
-    block({ id: 'mainIdea', text: project.mainIdea, kind: 'mainIdea', gap: 14 });
+    block({ id: 'mainIdea', text: project.mainIdea, kind: 'mainIdea', indent: true, gap: 14 });
     block({ id: 'translation-heading', text: LABELS.translation, kind: 'section-heading', gap: 25 });
     project.translation.paragraphs.forEach(item => block({ ...item, kind: 'translation', indent: true, gap: styles.paragraphGap }));
     for (const [id, source] of coverage) {
