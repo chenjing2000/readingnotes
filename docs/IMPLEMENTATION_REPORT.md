@@ -140,9 +140,9 @@ npm.cmd start
 
 - 实际编辑器截图：[artifacts/demo/editor.png](../artifacts/demo/editor.png)
 - 新生成卡片：[第 1 页](../artifacts/demo/page-01.png)、[第 2 页](../artifacts/demo/page-02.png)、[第 3 页](../artifacts/demo/page-03.png)、[第 4 页](../artifacts/demo/page-04.png)
-- 原尺寸预览截图：`artifacts/demo/preview-page-01.png` 至 `artifacts/demo/preview-page-04.png`
+- 原尺寸预览在内存中与导出 PNG 逐字节比较，结果见 `artifacts/demo/validation.json`；不重复保存相同图片。
 - 全套 PNG 与项目：[artifacts/demo/reading-cards.zip](../artifacts/demo/reading-cards.zip)
-- 可重新导入的 v2 项目：[artifacts/demo/project.json](../artifacts/demo/project.json)
+- 可重新导入的当前 schema 3 项目：[artifacts/demo/project.json](../artifacts/demo/project.json)
 - 一致性证据：[artifacts/demo/validation.json](../artifacts/demo/validation.json)
 
 ![实际编辑器截图](../artifacts/demo/editor.png)

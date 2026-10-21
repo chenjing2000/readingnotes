@@ -1,15 +1,15 @@
 import { test, expect } from '@playwright/test';
 import { unzipSync, strFromU8 } from 'fflate';
 import { readFile } from 'node:fs/promises';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
 test('entry rules collect manual variants and persist without a top-level highlights list', async ({ page, request }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const input = {
-    ...fixture, schemaVersion: 2, highlights: [],
+    ...fixture, schemaVersion: 3,
     source: { paragraphs: [{ id: 'p1', text: 'RUN runs runner. They took off and take off. run. They ran away.' }] },
-    vocabulary: [{ id: 'v1', word: 'run', ipa: '/rʌn/', pos: 'v.', meaning: '跑', highlight: ['run', 'runs'] }],
-    expressions: [{ id: 'x1', phrase: 'take off', meaning: '起飞', example: 'They took off.', exampleTranslation: '他们起飞了。', highlight: ['take off', 'took off'] }],
+    vocabulary: [{ id: 'v1', word: 'run', ipa: '/rʌn/', highlight: ['run', 'runs'], senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }],
+    expressions: [{ id: 'x1', phrase: 'take off', highlight: ['take off', 'took off'], senses: [{ pos: '', meaning: '起飞', example: 'They took off.', exampleTranslation: '他们起飞了。' }] }],
   };
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'variants.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(input)) });
   await expect(page.locator('[data-ready="true"]')).toBeVisible();

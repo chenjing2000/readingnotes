@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { unzipSync } from 'fflate';
 
 async function ready(page: Page) {
@@ -92,7 +92,7 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
 
 test('entry rule highlights all occurrences and keeps preview navigation', async ({ page }) => {
   await page.goto('/'); await ready(page);
-  await load(page, { ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
+  await load(page, { ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] } });
   const input = page.getByLabel('英文段落 1', { exact: true });
   await input.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 9); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click(); await ready(page);
@@ -125,7 +125,7 @@ test('line pagination preserves long sentences, Chinese, graphemes, columns and 
   const longExample = Array.from({ length: 230 }, (_, index) => `example${index}`).join(' ');
   const chinese = '中文段落（标点），混合English123。👨‍👩‍👧‍👦 é '.repeat(170);
   const token = 'W'.repeat(800);
-  const project = { ...fixture, highlights: [], source: { paragraphs: [{ id: 'p', text: ('A complete line of English. '.repeat(200)) + token }] }, expressions: [{ ...fixture.expressions[0], example: longExample }], translation: { paragraphs: [{ id: 'zh', text: chinese }] } };
+  const project = { ...fixture, source: { paragraphs: [{ id: 'p', text: ('A complete line of English. '.repeat(200)) + token }] }, expressions: [{ ...fixture.expressions[0], senses: [{ ...fixture.expressions[0].senses[0], example: longExample }] }], translation: { paragraphs: [{ id: 'zh', text: chinese }] } };
   await load(page, project);
   expect(await assertCoverage(page)).toEqual([]);
   for (const [id, original] of [['p', project.source.paragraphs[0].text], ['x-1:example', longExample], ['zh', chinese]]) {
@@ -182,7 +182,7 @@ test('styles inherit, short content flows, breaks persist, exports match preview
   expect(stale.status()).toBe(400);
   const changedContent = await request.post('/api/export', { data: { ...snapshot, project: { ...snapshot.project, title: 'X' + snapshot.project.title.slice(1) } } });
   expect(changedContent.status()).toBe(400);
-  const tiny = { ...fixture, title: 'Short', source: { paragraphs: [] }, highlights: [], vocabulary: [], expressions: [], mainIdea: 'Short idea', translation: { paragraphs: [{ id: 'zh', text: '短译文。' }] } };
+  const tiny = { ...fixture, title: 'Short', source: { paragraphs: [] }, vocabulary: [], expressions: [], mainIdea: 'Short idea', translation: { paragraphs: [{ id: 'zh', text: '短译文。' }] } };
   await load(page, tiny);
   await expect(page.locator('.card')).toHaveCount(1);
   await expect(page.locator('.card .section-heading')).toHaveCount(3);

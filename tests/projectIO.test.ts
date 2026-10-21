@@ -1,8 +1,22 @@
 import { expect, it, vi } from 'vitest';
-import fixture from '../assets/reference/project.schema2.json';
+import fixture from '../assets/projects/brainco/project.json';
 import { layoutKey, parseProject } from '../src/models/project';
-import { requestExport } from '../src/services/projectIO';
+import { requestExport, restoreDraft } from '../src/services/projectIO';
 import type { LayoutDiagnostics } from '../src/services/layoutVerification';
+
+it('rejects an old-format draft while preserving its original bytes in quarantine', () => {
+  const raw = JSON.stringify({ project: { ...fixture, schemaVersion: 2 } });
+  const store = new Map([['reading-editor.draft.v2', raw]]);
+  vi.stubGlobal('localStorage', { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => store.set(key, value) });
+  try {
+    const restored = restoreDraft();
+    expect(restored.project.schemaVersion).toBe(3);
+    expect(restored.rejected).toBe(raw);
+    expect(restored.notice).toContain('格式不受支持');
+    expect(store.get('reading-editor.rejected-draft')).toBe(raw);
+    expect(store.get('reading-editor.draft.v2')).toBe(raw);
+  } finally { vi.unstubAllGlobals(); }
+});
 
 it('keeps large line diagnostics within the existing export request budget', async () => {
   const project = parseProject(fixture);

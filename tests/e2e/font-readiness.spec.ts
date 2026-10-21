@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('cold font loading preserves the first layout including unique part-of-speech characters', async ({ page }) => {
   await page.route('**/*.woff2', async route => { await new Promise(resolve => setTimeout(resolve, 150)); await route.continue(); });
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
-  const project = parseProject({ ...fixture, title: 'Test', highlights: [], source: { paragraphs: [] }, translation: { paragraphs: [] }, expressions: [], mainIdea: 'Test', vocabulary: [{ id: 'v1', word: 'word', ipa: '', pos: 'Ж'.repeat(100), meaning: 'Test' }] });
+  const project = parseProject({ ...fixture, title: 'Test', source: { paragraphs: [] }, translation: { paragraphs: [] }, expressions: [], mainIdea: 'Test', vocabulary: [{ id: 'v1', word: 'word', ipa: '', senses: [{ pos: 'Ж'.repeat(100), meaning: 'Test', example: '', exampleTranslation: '' }] }] });
   const signatures = await page.evaluate(async project => {
     const first = await window.renderProject(project);
     const diagnostics = window.renderDiagnostics;

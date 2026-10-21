@@ -1,6 +1,6 @@
 import { beforeAll, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
-import fixture from '../assets/reference/project.schema2.json';
+import fixture from '../assets/projects/brainco/project.json';
 
 const { launch, post } = vi.hoisted(() => ({ launch: vi.fn(), post: vi.fn() }));
 vi.mock('@playwright/test', () => ({ chromium: { launch } }));

@@ -15,31 +15,29 @@ export const styleSchema = z.object({
 export const defaults = styleSchema.parse({});
 const id = z.string().min(1).max(200);
 // A layout key contains a kind and an ID; JSON escaping can expand each ID character to six characters.
-const pageBreakKey = z.string().min(1).max(2048);
+const pageBreakKey = z.string().min(1).max(2048).refine(value => {
+  try {
+    const key: unknown = JSON.parse(value);
+    return Array.isArray(key) && key.length === 2 && key.every(part => typeof part === 'string' && part.length > 0);
+  } catch { return false; }
+}, '分页标记必须是编码后的 [kind, sourceId]');
 const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(value), '含无效控制字符或乱码替代符');
 const paragraph = z.object({ id, text });
-const highlight = z.object({ id, paragraphId: id, start: z.number().int().nonnegative(), end: z.number().int().positive(), quote: text });
 const variants = z.array(text).max(2000).default([]);
 export const emptySense = () => ({ pos: '', meaning: '', example: '', exampleTranslation: '' });
-const senseSchema = z.object({ pos: text, meaning: text, example: text, exampleTranslation: text });
+const senseSchema = z.object({ pos: text, meaning: text, example: text, exampleTranslation: text }).strict();
 const senses = z.array(senseSchema).min(1).max(2000);
-const legacyCommon = {
+const common = {
   id, title: text, personalizedHeader: text.default('SOME BIRDS ON TREE'), readingLevel: z.number().optional(),
   source: z.object({ paragraphs: z.array(paragraph).max(500) }),
   translation: z.object({ paragraphs: z.array(paragraph).max(500) }),
-  vocabulary: z.array(z.object({ id, word: text, pos: text, meaning: text, ipa: text.optional(), highlight: variants })).max(2000),
-  expressions: z.array(z.object({ id, phrase: text, meaning: text, example: text, exampleTranslation: text, highlight: variants })).max(2000),
+  vocabulary: z.array(z.object({ id, word: text, ipa: text.optional(), highlight: variants, senses }).strict()).max(2000),
+  expressions: z.array(z.object({ id, phrase: text, highlight: variants, senses }).strict()).max(2000),
   mainIdea: text,
   theme: z.literal('classic').default('classic'),
   layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
 };
-const common = { ...legacyCommon,
-  vocabulary: z.array(z.object({ id, word: text, ipa: text.optional(), highlight: variants, senses })).max(2000),
-  expressions: z.array(z.object({ id, phrase: text, highlight: variants, senses })).max(2000),
-};
-const currentSchema = z.object({ ...common, schemaVersion: z.literal(3), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
-const version2Schema = z.object({ ...legacyCommon, schemaVersion: z.literal(2), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
-const legacySchema = z.object({ ...legacyCommon, schemaVersion: z.literal(1), highlights: z.array(z.object({ id, text, style: z.string().optional() })) });
+const currentSchema = z.object({ ...common, schemaVersion: z.literal(3), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) }).strict();
 export type Project = z.infer<typeof currentSchema>;
 export type Styles = Project['styles'];
 export type EntryCollection = 'vocabulary' | 'expressions';
@@ -48,43 +46,13 @@ export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
 
 export function parseProject(input: unknown): Project {
-  let project: Project;
-  let oldTerms: string[] = [];
-  let oldMarks: z.infer<typeof highlight>[] = [];
-  const version = (input as { schemaVersion?: number })?.schemaVersion;
-  if (version === 1 || version === 2) {
-    const old = version === 1 ? legacySchema.parse(input) : version2Schema.parse(input);
-    if ('highlights' in old) oldTerms = old.highlights.map(hint => hint.text);
-    project = currentSchema.parse({ ...old, schemaVersion: 3,
-      vocabulary: old.vocabulary.map(({ pos, meaning, ...entry }) => ({ ...entry, senses: [{ ...emptySense(), pos, meaning }] })),
-      expressions: old.expressions.map(({ meaning, example, exampleTranslation, ...entry }) => ({ ...entry, senses: [{ pos: '', meaning, example, exampleTranslation }] })),
-    });
-  } else project = currentSchema.parse(input);
-  if (version !== 1 && input && typeof input === 'object' && 'highlights' in input) oldMarks = z.array(highlight).parse(input.highlights);
-  const ids = [project.id, ...project.source.paragraphs.map(item => item.id), ...project.translation.paragraphs.map(item => item.id), ...project.vocabulary.map(item => item.id), ...project.expressions.map(item => item.id), ...oldMarks.map(item => item.id)];
-  if (new Set(ids).size !== ids.length) throw new Error('项目含重复 ID，请为各条目使用唯一 ID。');
-  for (const mark of oldMarks) {
-    const source = project.source.paragraphs.find(item => item.id === mark.paragraphId);
-    if (!source || mark.end <= mark.start || mark.end > source.text.length || source.text.slice(mark.start, mark.end) !== mark.quote) throw new Error(`项目高亮 ${mark.id} 与原文不匹配，请重新确认。`);
-    if (!isWholeTermSelection(source.text, mark.start, mark.end)) project.warnings.push(`旧高亮“${mark.quote}”已保留为条目规则，但原选区不是完整单词或词组，请重新确认。`);
+  if (input && typeof input === 'object' && 'schemaVersion' in input && input.schemaVersion !== 3) {
+    throw new Error('仅支持 schemaVersion: 3，旧格式不再支持，请按当前 skill 重新生成 JSON。');
   }
-  for (const term of [...oldTerms, ...oldMarks.map(mark => mark.quote)]) project = addHighlightTerm(project, term);
-  const targets = [
-    ['title', 'title'], ...project.source.paragraphs.map(item => ['article', item.id]),
-    ...project.vocabulary.map(item => ['vocab', item.id]),
-    ...project.expressions.flatMap(item => [['phrase', `${item.id}:phrase`], ...item.senses.flatMap((_, index) => ['meaning', 'example', 'exampleTranslation'].map(field => [field, senseSourceId(item.id, index, field)]))]),
-    ...project.vocabulary.flatMap(item => item.senses.flatMap((_, index) => ['example', 'exampleTranslation'].map(field => [field, senseSourceId(item.id, index, field)]))),
-    ['mainIdea', 'mainIdea'], ...project.translation.paragraphs.map(item => ['translation', item.id]),
-    ...['vocab-heading', 'expressions-heading', 'main-heading', 'translation-heading'].map(id => [id === 'vocab-heading' ? 'vocab-heading' : 'section-heading', id]),
-  ];
-  const keys = new Set(targets.map(([kind, id]) => layoutKey(kind, id)));
-  project.layoutOverrides.manualPageBreaks = [...new Set(project.layoutOverrides.manualPageBreaks.flatMap(key => {
-    if (keys.has(key)) return [key];
-    const matches = targets.filter(([, id]) => id === key);
-    if (matches.length > 1) project.warnings.push(`旧分页标记“${key}”引用多个同名节点，请重新确认前换页选项。`);
-    return matches.length ? matches.map(([kind, id]) => layoutKey(kind, id)) : [key];
-  }))];
-  return currentSchema.parse(project);
+  const project = currentSchema.parse(input);
+  const ids = [project.id, ...project.source.paragraphs.map(item => item.id), ...project.translation.paragraphs.map(item => item.id), ...project.vocabulary.map(item => item.id), ...project.expressions.map(item => item.id)];
+  if (new Set(ids).size !== ids.length) throw new Error('项目含重复 ID，请为各条目使用唯一 ID。');
+  return project;
 }
 
 export type HighlightRange = { paragraphId: string; start: number; end: number; quote: string };

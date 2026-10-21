@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
-import fixture from '../assets/reference/project.schema2.json';
+import fixture from '../assets/projects/brainco/project.json';
 import { collectHighlights, parseProject, toggleHighlight } from '../src/models/project';
 import { readProject } from '../src/services/projectIO';
 
 function project(text: string, words: string[], phrases: string[] = []) {
-  return parseProject({ ...fixture, schemaVersion: 2, source: { paragraphs: [{ id: 'p1', text }] }, vocabulary: [{ id: 'v1', word: 'run', pos: 'v.', meaning: '跑', highlight: words }], expressions: [{ id: 'x1', phrase: 'take off', meaning: '起飞', example: '', exampleTranslation: '', highlight: phrases }] });
+  return parseProject({ ...fixture, schemaVersion: 3, source: { paragraphs: [{ id: 'p1', text }] }, vocabulary: [{ id: 'v1', word: 'run', highlight: words, senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }], expressions: [{ id: 'x1', phrase: 'take off', highlight: phrases, senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }] }] });
 }
 
 it('preserves variant lists and rejects invalid list types', () => {

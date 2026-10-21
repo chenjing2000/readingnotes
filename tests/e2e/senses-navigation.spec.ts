@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { emptySense, layoutKey, parseProject, senseSourceId } from '../../src/models/project';
 
 test('distinct sense keys preserve navigation, page breaks, removal history and export', async ({ page, request }) => {

@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, strFromU8 } from 'fflate';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
 test('manual heads retain surface rules, senses stay paired and refresh preserves rule-only highlights', async ({ page, request }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const input = { ...fixture,
     source: { paragraphs: [{ id: 'p', text: 'ran run. A record was recorded. They took off and take off.' }] },
-    vocabulary: [{ id: 'v', word: 'run', ipa: '', pos: 'v.', meaning: '跑', highlight: ['ran'] }],
-    expressions: [{ id: 'x', phrase: 'take off', meaning: '起飞', example: '', exampleTranslation: '', highlight: ['take off'] }],
+    vocabulary: [{ id: 'v', word: 'run', ipa: '', highlight: ['ran'], senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }],
+    expressions: [{ id: 'x', phrase: 'take off', highlight: ['take off'], senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }] }],
   };
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'senses.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(input)) });
   const marks = page.locator('.article .hot');

@@ -21,6 +21,7 @@ node_modules/
 /artifacts/blob-report/
 /playwright/.cache/
 /.install-check/
+/artifacts/demo/preview-page-*.png
 
 # Local environment and secrets; keep shareable examples
 .env

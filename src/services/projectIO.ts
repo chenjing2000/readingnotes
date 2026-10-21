@@ -16,7 +16,7 @@ export function restoreDraft(): { project: Project; notice: string; cacheBlocked
       localStorage.setItem('reading-editor.rejected-draft', saved);
       preserved = true;
     } catch { preserved = false; }
-    return { project: parseProject(fixture), notice: preserved ? '损坏草稿已隔离备份，可下载原始草稿尝试恢复。当前显示样例。' : '草稿无法读取或备份，自动缓存已停用以保护旧数据；请保存 JSON。', cacheBlocked: !preserved, rejected: saved ?? undefined };
+    return { project: parseProject(fixture), notice: preserved ? '草稿格式不受支持或无法读取，已隔离备份，可下载原始草稿。当前显示样例。' : '草稿无法读取或备份，自动缓存已停用以保护旧数据；请保存 JSON。', cacheBlocked: !preserved, rejected: saved ?? undefined };
   }
   return { project: parseProject(fixture), notice: '已加载 BrainCo 完整样例。所有处理均在本机完成。', cacheBlocked: false };
 }

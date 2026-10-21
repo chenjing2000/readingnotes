@@ -1,7 +1,7 @@
 import { test, expect, chromium } from '@playwright/test';
 import { mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('phrase can finish a page while its meaning and example continue on next', async ({ page }) => {

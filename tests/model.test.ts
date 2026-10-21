@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import fixture from '../assets/reference/project.schema2.json';
+import fixture from '../assets/projects/brainco/project.json';
 import { collectHighlights, parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
 
-describe('project persistence and precise highlights', () => {
+describe('project persistence and entry highlights', () => {
   it('defaults missing personalized headers and preserves custom or empty values', () => {
     expect(parseProject(fixture).personalizedHeader).toBe('SOME BIRDS ON TREE');
     for (const personalizedHeader of ['My reading notes', '']) {
@@ -12,7 +12,7 @@ describe('project persistence and precise highlights', () => {
       expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
     }
   });
-  it('migrates without changing either independent snapshot', () => {
+  it('preserves both independent content snapshots', () => {
     const project = parseProject(fixture);
     expect(project.schemaVersion).toBe(3);
     for (const [key, filename] of [['source', 'article'], ['translation', 'translation']] as const) {
@@ -33,7 +33,7 @@ describe('project persistence and precise highlights', () => {
     expect(() => parseProject({ ...project, highlights: [{ id: 'bad', paragraphId: 'en-1', start: 0, end: 3, quote: 'bad' }] })).toThrow();
   });
   it('marks and removes all occurrences through an entry rule', () => {
-    let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
+    let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] } });
     project = toggleHighlight(project, 'p', 0, 4);
     expect(collectHighlights(project)).toHaveLength(2);
     project = toggleHighlight(project, 'p', 5, 9);
@@ -41,7 +41,7 @@ describe('project persistence and precise highlights', () => {
     expect(project.vocabulary.find(entry => entry.word === 'word')?.highlight).toEqual([]);
   });
   it('derives positions from current text without storing offsets', () => {
-    let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] }, highlights: [] });
+    let project = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] } });
     project = toggleHighlight(project, 'p', 5, 9);
     project = editParagraph(project, 'p', 'new word word');
     expect(collectHighlights(project)).toMatchObject([{ start: 4, end: 8, quote: 'word' }, { start: 9, end: 13, quote: 'word' }]);
@@ -51,19 +51,10 @@ describe('project persistence and precise highlights', () => {
   });
   it('round-trips page breaks for maximum-length IDs, including JSON escapes', () => {
     const paragraphId = '\u0001'.repeat(200);
-    const project = parseProject({ ...fixture, source: { paragraphs: [{ id: paragraphId, text: 'Article' }] }, highlights: [] });
+    const project = parseProject({ ...fixture, source: { paragraphs: [{ id: paragraphId, text: 'Article' }] } });
     project.layoutOverrides.manualPageBreaks = [layoutKey('article', paragraphId)];
     expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
-    const legacyBreak = parseProject({ ...project, layoutOverrides: { manualPageBreaks: [paragraphId] } });
-    expect(parseProject(JSON.parse(JSON.stringify(legacyBreak)))).toEqual(legacyBreak);
+
   });
-  it('migrates highlights with long source and hint IDs into persistable unique IDs', () => {
-    const project = parseProject({
-      ...fixture, schemaVersion: 1, source: { paragraphs: [{ id: 'p'.repeat(200), text: 'word word' }] },
-      highlights: [{ id: 'h'.repeat(200), text: 'word' }],
-    });
-    expect(collectHighlights(project).map(mark => [mark.start, mark.end, mark.quote])).toEqual([[0, 4, 'word'], [5, 9, 'word']]);
-    expect(project.vocabulary.find(entry => entry.word === 'word')?.id.length).toBeLessThanOrEqual(200);
-    expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
-  });
+
 });

@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
 test('three-column vocabulary table edits and moves the selected row, inserts below it and handles an empty table', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const project = { ...fixture, vocabulary: [
-    { id: 'v1', word: 'alpha', ipa: '/a/', pos: 'n.', meaning: '甲' },
-    { id: 'v2', word: 'beta', ipa: '/b/', pos: 'adj.', meaning: '乙' },
-    { id: 'v3', word: 'gamma', ipa: '/g/', pos: 'v.', meaning: '丙' },
+    { id: 'v1', word: 'alpha', ipa: '/a/', senses: [{ pos: 'n.', meaning: '甲', example: '', exampleTranslation: '' }] },
+    { id: 'v2', word: 'beta', ipa: '/b/', senses: [{ pos: 'adj.', meaning: '乙', example: '', exampleTranslation: '' }] },
+    { id: 'v3', word: 'gamma', ipa: '/g/', senses: [{ pos: 'v.', meaning: '丙', example: '', exampleTranslation: '' }] },
   ] };
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'table.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });
   await expect(page.locator('[data-ready="true"]')).toBeVisible();

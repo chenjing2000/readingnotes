@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
+import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('splitter resizes both panes by dragging and keyboard without changing pagination', async ({ page }) => {

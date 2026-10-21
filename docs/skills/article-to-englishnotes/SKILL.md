@@ -5,7 +5,7 @@ description: Use when a user provides an English article and wants an importable
 
 # 文章转 EnglishNotes 精读卡片 JSON
 
-将用户提供的英文文章或已有 EnglishNotes 项目整理为可通过“打开 JSON”导入的文件，使用 `schemaVersion: 3`。高亮只由各词汇、表达条目的 `highlight` 列表管理；不要输出顶层 `highlights` 或误拼的 `hightlights`。本文可单独上传给 ChatGPT 等 LLM 使用，不要求访问仓库或运行代码。
+将用户提供的英文文章或已有 schema 3 EnglishNotes 项目整理为可通过“打开 JSON”导入的文件，使用 `schemaVersion: 3`。高亮只由各词汇、表达条目的 `highlight` 列表管理；不要输出顶层 `highlights` 或误拼的 `hightlights`。本文可单独上传给 ChatGPT 等 LLM 使用，不要求访问仓库或运行代码。
 
 ## 输入与交付
 
@@ -51,7 +51,7 @@ description: Use when a user provides an English article and wants an importable
 
 ### 词典形式整理、ID 和高亮
 
-- 每个词汇、表达都显式给出 **`highlight`（单数）字符串数组**，列出应标注的原文表面形式及变体。例如词头 `run` 对应 `["run", "runs", "ran", "running"]`，短语 `take off` 对应 `["take off", "takes off", "took off", "taking off"]`。新文章生成时只列本文出现的形式，不必穷举；整理已有 JSON 时按后文保留原列表。希望词头本身被标注时也要列入，程序不自动推断词形；无需标注用 `[]`，不能写成字符串、对象或 `null`。旧条目缺少该字段时按 `[]` 处理。
+- 每个词汇、表达都显式给出 **`highlight`（单数）字符串数组**，列出应标注的原文表面形式及变体。例如词头 `run` 对应 `["run", "runs", "ran", "running"]`，短语 `take off` 对应 `["take off", "takes off", "took off", "taking off"]`。新文章生成时只列本文出现的形式，不必穷举；整理已有 JSON 时按后文保留原列表。希望词头本身被标注时也要列入，程序不自动推断词形；无需标注用 `[]`，不能写成字符串、对象或 `null`。当前格式条目省略该字段时程序按 `[]` 处理，生成任务仍应显式填写。
 - 程序手工输入完成或选区标注后，会将完整表面形式同时保存到 `word` / `phrase` 和该条目的 `highlight`；不会收集逐键输入的中间片段。程序手工收集的 `word` 或 `phrase` 可能只是文章里的变体，尚未还原词典形式。整理时结合原文判断词性和词义，将单词还原为相应词典词头（如 `ran` → `run`、名词复数 → 单数），将短语还原为惯用词典形式（如 `took off` → `take off`、`paces back and forth` → `pace back and forth`）。不能仅凭词尾机械还原；同形不同义、不同词性的条目必要时分开，无法确认时保留而不乱改。
 - 将同一词典条目的原始表面形式、已有 `highlight` 列表合并保存到保留条目的 `highlight` 中。例如 `word: "ran", highlight: ["ran"]` 整理为 `word: "run", highlight: ["ran"]`；与已有 `run / runs` 合并时保留两边有效列表的并集。合并后按原顺序保留不同词性、不同含义及其对应例句；相同义项仅去除内容完全重复的对象，已有不同且有效的例句不要静默丢弃，可保留为相同词性/含义的不同 sense。不要因还原词头而丢掉 `ran`、`took off` 等用户选中的形式，也不要把这些形式只写进释义。只删除完全重复的字符串，不改写原文中的拼写或标点。
 - 若已有条目明确为 `highlight: []`，这是未启用或已取消的规则；整理和还原词头不能擅自重新加回它，也不能把还原后的词典词头补进列表。新文章生成模式按实际词形填写列表，现有 JSON 整理模式则保留用户已启用/取消的状态。
@@ -59,7 +59,7 @@ description: Use when a user provides an English article and wants an importable
 - 高亮只扫描 `source.paragraphs`：忽略大小写，匹配前后不能是字母、数字、组合标记或下划线，避免 `run` 命中 `runner`。规则是字面量而非正则；词组内连续空白或段内换行可互相匹配，不跨段落，重复/重叠命中合并。程序自行计算仅供渲染使用的位置，JSON 不存任何高亮坐标或高亮 ID。
 - 手工标注会将所选完整单词/词组的原形或变体直接收集到词汇或表达条目的列表，部分单词选区会提示重新选择；取消时移除覆盖该选择的规则，其所有命中一起取消。原文编辑、草稿恢复、重新导入及导出都根据同一份条目规则显示，不存在另一个全局高亮总表。词汇加号右侧的 ↻ 按钮统一刷新词汇与表达在正文中的命中，只重算列表，不补词典词头、不还原词形、不改变已取消的空列表；命中坐标只在内存中使用，无临时文件。
 - 项目、原文段落、译文段落、词汇、表达的 ID 必须全局唯一。修改已有项目时保留未合并对象的 ID；合并词条优先保留已有词典形式条目的 ID，否则保留首个条目的 ID，并将相关手动前换页标记改为保留的 ID。
-- 若输入为 schema 1/2，将词汇顶层的 pos/meaning 和表达顶层的 meaning/example/exampleTranslation 转为各自的单个 sense，词汇原本没有的例句留空或在本次整理时补全；输出升级为 schema 3。若输入为旧 JSON，先将顶层 `highlights` 中的 `text` 或 `quote` 归入相应词典条目的 `highlight`，确保原始表面形式不丢失，再删除顶层列表。不得在输出中继续保留它，不要让 LLM 计算 `start`、`end` 或 `paragraphId`。
+- 仅支持当前 schemaVersion: 3。程序不兼容 schema 1/2，不迁移旧顶层高亮、旧释义字段或裸分页 ID；用户提供旧项目时说明需要依据文章重新生成当前格式，不输出假装可直接导入的旧结构。
 
 ### 样式和分页
 

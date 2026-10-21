@@ -1,12 +1,12 @@
 import { expect, it } from 'vitest';
-import fixture from '../assets/reference/project.schema2.json';
+import fixture from '../assets/projects/brainco/project.json';
 import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntrySense, senseSourceId } from '../src/models/project';
 
-it('migrates old scalar senses without losing content and round-trips schema 3', () => {
+it('round-trips schema 3 without scalar entry fields', () => {
   const project = parseProject(fixture);
   expect(project.schemaVersion).toBe(3);
-  expect(project.vocabulary[0].senses[0]).toMatchObject({ pos: fixture.vocabulary[0].pos, meaning: fixture.vocabulary[0].meaning });
-  expect(project.expressions[0].senses[0]).toMatchObject({ meaning: fixture.expressions[0].meaning, example: fixture.expressions[0].example });
+  expect(project.vocabulary[0].senses[0]).toMatchObject(fixture.vocabulary[0].senses[0]);
+  expect(project.expressions[0].senses[0]).toMatchObject(fixture.expressions[0].senses[0]);
   expect(project.vocabulary[0]).not.toHaveProperty('pos');
   expect(project.expressions[0]).not.toHaveProperty('example');
   expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
@@ -21,7 +21,7 @@ it('keeps distinct senses and their examples together and rejects missing sense 
 });
 
 it('commits manual surface forms to the head and rule list without mutating old variants', () => {
-  const input = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'ran running run' }] }, vocabulary: [{ id: 'v', word: '', pos: '', meaning: '', highlight: [] }] });
+  const input = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'ran running run' }] }, vocabulary: [{ id: 'v', word: '', highlight: [], senses: [{ pos: '', meaning: '', example: '', exampleTranslation: '' }] }] });
   const first = commitEntryHead(input, 'vocabulary', 'v', 'ran');
   expect(first.vocabulary[0]).toMatchObject({ word: 'ran', highlight: ['ran'] });
   const second = commitEntryHead(first, 'vocabulary', 'v', 'running');
