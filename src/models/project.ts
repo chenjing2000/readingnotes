@@ -42,6 +42,12 @@ export type Project = z.infer<typeof currentSchema>;
 export type Styles = Project['styles'];
 export type EntryCollection = 'vocabulary' | 'expressions';
 export type Sense = Project['vocabulary'][number]['senses'][number];
+export function splitSenseMeaning(value: string, previousPos = ''): Pick<Sense, 'pos' | 'meaning'> {
+  if (previousPos && value.startsWith(`${previousPos} `)) return { pos: previousPos, meaning: value.slice(previousPos.length + 1) };
+  if (previousPos && value === previousPos) return { pos: previousPos, meaning: '' };
+  const match = /^([A-Za-z][A-Za-z./&-]*\.)(?:\s([\s\S]*))?$/u.exec(value);
+  return match ? { pos: match[1], meaning: match[2] ?? '' } : { pos: '', meaning: value };
+}
 export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
 

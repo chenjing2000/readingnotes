@@ -26,9 +26,9 @@ export default function VocabularyTable({ viewModel: vm, registerInput, focusFie
         <td>{editor(entry, index, 'word', '词头')}</td>
         <td>{editor(entry, index, 'ipa', '音标')}</td>
         <td>{entry.senses.map((sense, senseIndex) => <div className="sense-meaning" key={senseIndex}>
-          {(['pos', 'meaning'] as const).map(property => <input key={property} type="text" aria-label={`${property === 'pos' ? '词性' : '含义'} ${index + 1}${senseIndex ? ` 义项 ${senseIndex + 1}` : ''}`} value={sense[property]}
-            ref={input => registerInput(`vocabulary:${senseSourceId(entry.id, senseIndex, property)}`, input)}
-            onChange={event => vm.setSenseField('vocabulary', entry.id, senseIndex, property, event.target.value)} />)}
+          <EntryHeadInput label={`含义 ${index + 1}${senseIndex ? ` 义项 ${senseIndex + 1}` : ''}`} value={sense.pos ? `${sense.pos} ${sense.meaning}` : sense.meaning}
+            inputRef={input => { for (const property of ['pos', 'meaning']) registerInput(`vocabulary:${senseSourceId(entry.id, senseIndex, property)}`, input); }}
+            commit={value => vm.setVocabularyMeaning(entry.id, senseIndex, value)} />
         </div>)}</td>
       </tr>)}</tbody>
     </table>{!project.vocabulary.length && <p className="hint">暂无词汇，点击下方加号添加。</p>}</div>

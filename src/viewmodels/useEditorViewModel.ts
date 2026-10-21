@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, toggleHighlight, type EntryCollection, type Project, type Sense, type Styles } from '../models/project';
+import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, splitSenseMeaning, toggleHighlight, type EntryCollection, type Project, type Sense, type Styles } from '../models/project';
 import { paginate, type Layout } from '../services/pagination';
 import { cacheDraft, download, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
@@ -131,6 +131,9 @@ export function useEditorViewModel() {
   function setSenseField(key: EntryCollection, id: string, index: number, field: keyof Sense, value: string) {
     update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: entry.senses.map((sense, i) => i === index ? { ...sense, [field]: value } : sense) } : entry) }));
   }
+  function setVocabularyMeaning(id: string, index: number, value: string) {
+    update(current => ({ ...current, vocabulary: current.vocabulary.map(entry => entry.id === id ? { ...entry, senses: entry.senses.map((sense, i) => i === index ? { ...sense, ...splitSenseMeaning(value, sense.pos) } : sense) } : entry) }));
+  }
   function addSense(key: EntryCollection, id: string) {
     update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: [...entry.senses, emptySense()] } : entry) }));
   }
@@ -181,7 +184,7 @@ export function useEditorViewModel() {
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
-    highlightRange, refreshHighlights, commitHead, setSenseField, addSense, removeSense, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
+    highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
     clearWarnings, clearError, downloadRejectedDraft,
   };

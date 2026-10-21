@@ -46,7 +46,7 @@ description: Use when a user provides an English article and wants an importable
 - 表达对象：`{ "id": "expr-001", "phrase": "bring people together", "highlight": ["bring people together"], "senses": [{ "pos": "", "meaning": "让人们相聚", "example": "Small gardens can bring people together.", "exampleTranslation": "小花园能让人们相聚。" }] }`。不能把 `phrase` 改名为 `expression`。
 - 两类条目都必须提供非空 `senses` 数组。每个义项是 `{ "pos": "词性", "meaning": "对应中文含义", "example": "该义项的英文例句", "exampleTranslation": "该例句的中文翻译" }`。未知内容留空字符串；暂未整理的条目也保留一个四字段均为空的义项。词性使用 `n.`、`v.` 等简明形式，短语无法适用时用空字符串。不要把词性拼进 meaning，也不要使用彼此分离的 pos/meaning/example 数组。
 - 同一词条有不同词性或不同含义时，各自建立 sense，即使词性相同也不能把不同含义压成一项。每个义项的例句必须体现该项含义，翻译逐项对应；优先保留已有正确例句或采用原文中完整例句，缺少时另造贴合该义项的教学例句，不冒充原文引文。多义项与例句的关联不能依赖多个并行列表的下标。
-- schema 3 不再在词汇或表达条目顶层放 `pos`、`meaning`、`example`、`exampleTranslation`；它们只属于 `senses` 中的对象。程序编辑表的“含义”列把每个 sense 的词性与释义放在同一行，多义项分行；JSON 仍分别保存这两个字段。
+- schema 3 不再在词汇或表达条目顶层放 `pos`、`meaning`、`example`、`exampleTranslation`；它们只属于 `senses` 中的对象。程序词汇表的“含义”列为每个 sense 提供一个“词性＋一个空格＋释义”的编辑框，多个框纵向叠放；JSON 仍分别保存这两个字段，不把编辑框的合并显示文本直接写入 meaning。表达页不提供独立词性框或义项增删按钮，但导入的所有义项及其 pos 数据仍保留。
 - 原文中的换行用 JSON 转义 `\n` 表示，双引号和反斜杠分别转义为 `\"`、`\\`。不要在 JSON 字符串中直接写未转义换行。
 
 ### 词典形式整理、ID 和高亮

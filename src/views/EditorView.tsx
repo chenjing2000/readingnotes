@@ -46,8 +46,8 @@ export default function EditorView() {
     else if (['phrase', 'meaning', 'example', 'exampleTranslation'].includes(kind!)) { setTab('表达'); setFocusId(`expressions:${id}`); }
     else if (kind === 'translation' || kind === 'mainIdea') { setTab('主旨与译文'); setFocusId(kind === 'mainIdea' ? 'project:mainIdea' : `translation:${id}`); }
   }
-  function field(label: string, value: string, onChange: (value: string) => void, id?: string, rows = 2) {
-    return <label className="field" key={label}><span>{label}</span><textarea aria-label={label} value={value} rows={rows} ref={element => { if (id) registerInput(id, element); }} onChange={event => onChange(event.target.value)} /></label>;
+  function field(label: string, value: string, onChange: (value: string) => void, id?: string) {
+    return <label className="field" key={label}><span>{label}</span><AutoSizeTextarea label={label} value={value} inputRef={element => { if (id) registerInput(id, element); }} onChange={onChange} /></label>;
   }
   function breakControl(id: string, label: string) {
     return <label className="break-control"><input type="checkbox" aria-label={`${label} 前换页`} checked={project.layoutOverrides.manualPageBreaks.includes(id)} onChange={event => vm.setPageBreak(id, event.target.checked)} />前换页</label>;
@@ -62,13 +62,10 @@ export default function EditorView() {
         <tr><th scope="row">短语</th><td><EntryHeadInput multiline label={`短语 ${index + 1}`} value={entry.phrase} inputRef={input => registerInput(`${key}:${entry.id}:phrase`, input)} commit={value => vm.commitHead(key, entry.id, value)} /></td></tr>
         {entry.senses.map((sense, senseIndex) => Object.entries(labels).map(([property, label]) =>
           <tr key={`${senseIndex}:${property}`}><th scope="row">{label}{senseIndex > 0 && <small> {senseIndex + 1}</small>}</th><td>
-            {property === 'meaning' && <div className="entry-toolbar"><input aria-label={`表达词性 ${index + 1} 义项 ${senseIndex + 1}`} value={sense.pos} onChange={event => vm.setSenseField(key, entry.id, senseIndex, 'pos', event.target.value)} placeholder="词性" />
-              <button aria-label={`删除表达 ${index + 1} 义项 ${senseIndex + 1}`} disabled={entry.senses.length <= 1} onClick={() => vm.removeSense(key, entry.id, senseIndex)}>删除义项</button></div>}
             <AutoSizeTextarea label={`${label} ${index + 1}${senseIndex ? ` 义项 ${senseIndex + 1}` : ''}`} value={sense[property as keyof typeof labels]}
               inputRef={input => registerInput(`${key}:${senseSourceId(entry.id, senseIndex, property)}`, input)}
               onChange={value => vm.setSenseField(key, entry.id, senseIndex, property as keyof typeof labels, value)} /></td></tr>
         ))}</tbody></table>
-      <button aria-label={`表达 ${index + 1} 添加义项`} disabled={entry.senses.length >= 2000} onClick={() => vm.addSense(key, entry.id)}>添加义项</button>
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
@@ -92,7 +89,7 @@ export default function EditorView() {
           {field('英文标题', project.title, value => vm.setProjectText('title', value), 'project:title')}
           <p className="hint">在下方英文框选择文字，再点“标注 / 取消”。高亮字号始终继承正文。</p>
           {project.source.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
-            {field(`英文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('source', paragraph.id, value), `source:${paragraph.id}`, 9)}
+            {field(`英文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('source', paragraph.id, value), `source:${paragraph.id}`)}
             <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button>{breakControl(layoutKey('article', paragraph.id), `英文段落 ${index + 1}`)}</div>
             <button onClick={() => vm.removeParagraph('source', paragraph.id)}>删除英文段落 {index + 1}</button>
           </section>)}
@@ -101,10 +98,10 @@ export default function EditorView() {
         {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={registerInput} focusField={setFocusId} />}
         {tab === '表达' && expressions()}
         {tab === '主旨与译文' && <>
-          {field('Main Idea', project.mainIdea, value => vm.setProjectText('mainIdea', value), 'project:mainIdea', 4)}
+          {field('Main Idea', project.mainIdea, value => vm.setProjectText('mainIdea', value), 'project:mainIdea')}
           {breakControl(layoutKey('mainIdea', 'mainIdea'), 'Main Idea')}
           {project.translation.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
-            {field(`中文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('translation', paragraph.id, value), `translation:${paragraph.id}`, 7)}
+            {field(`中文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('translation', paragraph.id, value), `translation:${paragraph.id}`)}
             {!paragraph.text && <p className="hint">空段落将保留，不影响其他段落。</p>}
             <div className="entry-toolbar">{breakControl(layoutKey('translation', paragraph.id), `中文段落 ${index + 1}`)}<span className="spacer" /><button onClick={() => vm.removeParagraph('translation', paragraph.id)}>删除中文段落 {index + 1}</button></div>
           </section>)}

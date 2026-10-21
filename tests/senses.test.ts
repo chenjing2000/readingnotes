@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import fixture from '../assets/projects/brainco/project.json';
-import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntrySense, senseSourceId } from '../src/models/project';
+import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntrySense, senseSourceId, splitSenseMeaning } from '../src/models/project';
 
 it('round-trips schema 3 without scalar entry fields', () => {
   const project = parseProject(fixture);
@@ -10,6 +10,15 @@ it('round-trips schema 3 without scalar entry fields', () => {
   expect(project.vocabulary[0]).not.toHaveProperty('pos');
   expect(project.expressions[0]).not.toHaveProperty('example');
   expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
+});
+
+it('splits a combined sense editor without mixing meanings or changing custom existing parts of speech', () => {
+  expect(splitSenseMeaning('v. 恶化；变的不友好')).toEqual({ pos: 'v.', meaning: '恶化；变的不友好' });
+  expect(splitSenseMeaning('adj. 酸的，有酸味的')).toEqual({ pos: 'adj.', meaning: '酸的，有酸味的' });
+  expect(splitSenseMeaning('n./v. 记录')).toEqual({ pos: 'n./v.', meaning: '记录' });
+  expect(splitSenseMeaning('只有含义')).toEqual({ pos: '', meaning: '只有含义' });
+  expect(splitSenseMeaning('')).toEqual({ pos: '', meaning: '' });
+  expect(splitSenseMeaning('n. / v. 记录', 'n. / v.')).toEqual({ pos: 'n. / v.', meaning: '记录' });
 });
 
 it('keeps distinct senses and their examples together and rejects missing sense lists', () => {

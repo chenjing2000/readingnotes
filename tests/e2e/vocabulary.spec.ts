@@ -60,8 +60,7 @@ test('table fields preserve part of speech, drafts, page breaks and preview navi
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await page.getByLabel('音标 2', { exact: true }).fill('/changed/');
-  await page.getByLabel('词性 2', { exact: true }).fill('n.');
-  await page.getByLabel('含义 2', { exact: true }).fill('保留的含义');
+  await page.getByLabel('含义 2', { exact: true }).fill('n. 保留的含义');
   await page.getByLabel('选中词汇前换页', { exact: true }).check();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const snapshot = await page.evaluate(() => window.editor.project);
@@ -70,8 +69,7 @@ test('table fields preserve part of speech, drafts, page breaks and preview navi
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await expect(page.getByLabel('音标 2', { exact: true })).toHaveValue('/changed/');
-  await expect(page.getByLabel('词性 2', { exact: true })).toHaveValue('n.');
-  await expect(page.getByLabel('含义 2', { exact: true })).toHaveValue('保留的含义');
+  await expect(page.getByLabel('含义 2', { exact: true })).toHaveValue('n. 保留的含义');
   await page.locator('.card [data-edit]').filter({ hasText: fixture.vocabulary[0].word }).first().click();
   await expect(page.getByLabel('词头 1', { exact: true })).toBeFocused();
   await expect(page.getByRole('table', { name: '词汇表' }).locator('tr[aria-selected="true"]').getByLabel('词头 1', { exact: true })).toHaveValue(fixture.vocabulary[0].word);

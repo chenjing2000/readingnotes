@@ -8,7 +8,7 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   const input = { ...fixture,
     source: { paragraphs: [{ id: 'p', text: 'ran run. A record was recorded. They took off and take off.' }] },
     vocabulary: [{ id: 'v', word: 'run', ipa: '', highlight: ['ran'], senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }],
-    expressions: [{ id: 'x', phrase: 'take off', highlight: ['take off'], senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }] }],
+    expressions: [{ id: 'x', phrase: 'take off', highlight: ['take off'], senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }, { pos: '', meaning: '迅速走红', example: 'Her career took off.', exampleTranslation: '她的事业腾飞了。' }] }],
   };
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'senses.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(input)) });
   const marks = page.locator('.article .hot');
@@ -24,14 +24,12 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await add.click();
   const head = page.getByLabel('词头 2', { exact: true });
   await head.fill('rec'); await head.fill('record'); await head.press('Enter');
-  await page.getByLabel('词性 2', { exact: true }).fill('n.');
-  await page.getByLabel('含义 2', { exact: true }).fill('记录');
+  await page.getByLabel('含义 2', { exact: true }).fill('n. 记录');
   await page.getByText('选中词汇的义项与例句', { exact: true }).click();
   await page.getByLabel('词汇例句 1', { exact: true }).fill('Keep a record.');
   await page.getByLabel('词汇翻译 1', { exact: true }).fill('保留记录。');
   await page.getByRole('button', { name: '为选中词汇添加义项', exact: true }).click();
-  await page.getByLabel('词性 2 义项 2', { exact: true }).fill('v.');
-  await page.getByLabel('含义 2 义项 2', { exact: true }).fill('录制');
+  await page.getByLabel('含义 2 义项 2', { exact: true }).fill('v. 录制');
   await page.getByLabel('词汇例句 2', { exact: true }).fill('They recorded it.');
   await page.getByLabel('词汇翻译 2', { exact: true }).fill('他们录制了它。');
   await page.getByRole('button', { name: '表达', exact: true }).click();
@@ -40,10 +38,6 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await page.getByLabel('含义 2', { exact: true }).fill('起飞');
   await page.getByLabel('例句 2', { exact: true }).fill('They took off.');
   await page.getByLabel('翻译 2', { exact: true }).fill('他们起飞了。');
-  await page.getByRole('button', { name: '表达 2 添加义项', exact: true }).click();
-  await page.getByLabel('含义 2 义项 2', { exact: true }).fill('迅速走红');
-  await page.getByLabel('例句 2 义项 2', { exact: true }).fill('Her career took off.');
-  await page.getByLabel('翻译 2 义项 2', { exact: true }).fill('她的事业腾飞了。');
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await refresh.click(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await expect(marks).toHaveText(['ran', 'record', 'took off', 'take off']);
@@ -57,7 +51,8 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
     { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' },
   ]);
   expect(saved.expressions[1].highlight).toEqual(['took off']);
-  expect(saved.expressions[1].senses.map((sense: { meaning: string }) => sense.meaning)).toEqual(['起飞', '迅速走红']);
+  expect(saved.expressions[0].senses.map((sense: { meaning: string }) => sense.meaning)).toEqual(['起飞', '迅速走红']);
+  expect(saved.expressions[1].senses[0].example).toBe('They took off.');
   expect(saved).not.toHaveProperty('highlights');
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await expect(marks).toHaveText(['ran', 'record', 'took off', 'take off']);
