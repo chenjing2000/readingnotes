@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('splitter resizes both panes by dragging and keyboard without changing pagination', async ({ page }) => {
@@ -49,15 +49,15 @@ test('colored expression labels appear once and participate in real line measure
   const project = parseProject(fixture);
   project.source.paragraphs = []; project.vocabulary = [];
   project.expressions = [
-    { id: 'long', phrase: 'A phrase', meaning: '很长的含义。'.repeat(300), example: 'An example sentence. '.repeat(200), exampleTranslation: '很长的例句译文。'.repeat(200), highlight: [] },
-    { id: 'empty', phrase: '', meaning: '', example: '', exampleTranslation: '', highlight: [] },
+    { id: 'long', phrase: 'A phrase', senses: [{ pos: '', meaning: '很长的含义。'.repeat(300), example: 'An example sentence. '.repeat(200), exampleTranslation: '很长的例句译文。'.repeat(200) }], highlight: [] },
+    { id: 'empty', phrase: '', senses: [{ pos: '', meaning: '', example: '', exampleTranslation: '' }], highlight: [] },
   ];
   await page.evaluate(input => window.renderProject(input), project);
   for (const [field, label] of [['meaning', '含义：'], ['example', '例句：'], ['exampleTranslation', '翻译：']] as const) {
     const lines = page.locator(`[data-source="long:${field}"]`);
     await expect(lines.locator('.expression-label')).toHaveText([label]);
     await expect(lines.locator('.expression-label')).toHaveCSS('color', 'rgb(0, 109, 135)');
-    expect((await lines.locator('.line-content').allTextContents()).join('')).toBe(project.expressions[0][field]);
+    expect((await lines.locator('.line-content').allTextContents()).join('')).toBe(project.expressions[0].senses[0][field]);
     const pages = await lines.evaluateAll(nodes => new Set(nodes.map(node => node.closest('.card')!.getAttribute('data-page'))).size);
     expect(pages).toBeGreaterThan(1);
     await expect(page.locator(`[data-source="empty:${field}"] .expression-label`)).toHaveText(label);

@@ -7,7 +7,7 @@
 .vocabulary-editor{display:flex;flex-direction:column;flex:1;min-height:0}
 .vocabulary-table-scroll{overflow:auto;flex:1;min-height:0;border:1px solid #d8dfda;border-radius:6px}
 .vocabulary-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12px}
-.vocabulary-table col:nth-child(1){width:27%}.vocabulary-table col:nth-child(2){width:26%}.vocabulary-table col:nth-child(3){width:15%}.vocabulary-table col:nth-child(4){width:32%}
+.vocabulary-table col:nth-child(1){width:25%}.vocabulary-table col:nth-child(2){width:25%}.vocabulary-table col:nth-child(3){width:50%}
 .vocabulary-table th{position:sticky;top:0;z-index:1;background:#edf5f0;color:#30443e;text-align:left;padding:9px 6px;border-bottom:1px solid #c8d7cd}
 .vocabulary-table th,.vocabulary-table td{vertical-align:middle}
 .vocabulary-table td{padding:5px;border-bottom:1px solid #dce5df;border-right:1px solid #dce5df}
@@ -29,3 +29,5 @@
 .expression-table textarea:focus{outline:1px solid #4f8a67;background:#fff}
 /* Keep card origins on whole pixels so native-size preview screenshots match exported PNGs. */
 .preview{align-items:flex-start}.card-wrapper{margin-left:round(down,max(0px,calc((100% - 1200px * var(--zoom)) / 2)),1px)}
+
+.sense-meaning{display:flex;align-items:center;gap:2px}.sense-meaning+ .sense-meaning{border-top:1px dashed #d8dfda}.sense-meaning input:first-child{width:48px;flex-shrink:0}.sense-meaning input:last-child{flex:1;min-width:0}.vocabulary-senses{max-height:35vh;overflow:auto;flex-shrink:0;font-size:12px;padding:6px 0}.vocabulary-senses summary{cursor:pointer;padding:5px}.vocabulary-senses section{padding:8px 0;border-bottom:1px solid #d8dfda}.expression-table .entry-toolbar input{width:70px;min-width:0}.vocabulary-senses textarea{resize:vertical;width:100%}

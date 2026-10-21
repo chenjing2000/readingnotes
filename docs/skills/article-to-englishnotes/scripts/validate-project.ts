@@ -11,8 +11,11 @@ for (const path of files.length ? files : [skillPath]) {
     const source = files.length ? text : text.match(/```json\r?\n([\s\S]*?)\r?\n```/)?.[1];
     if (!source) throw new Error('SKILL.md 中缺少完整 JSON 示例');
     const input = JSON.parse(source);
-    if (input.schemaVersion !== 2) throw new Error('本 skill 生成文件必须使用 schemaVersion: 2');
+    if (input.schemaVersion !== 3) throw new Error('本 skill 生成文件必须使用 schemaVersion: 3');
     if ('highlights' in input || 'hightlights' in input) throw new Error('新格式禁止顶层 highlights/hightlights，请将原始变体归入各条目的 highlight 列表');
+    for (const entry of [...(input.vocabulary ?? []), ...(input.expressions ?? [])]) {
+      if (['pos', 'meaning', 'example', 'exampleTranslation'].some(field => field in entry)) throw new Error('schema 3 的词性、含义及例句必须放在 senses 中，不能位于条目顶层');
+    }
     const project = parseProject(input);
     if (!files.length && JSON.stringify(project.styles) !== JSON.stringify(defaults)) throw new Error('示例默认样式与程序不一致');
     if (!files.length && project.personalizedHeader !== parseProject({ ...input, personalizedHeader: undefined }).personalizedHeader) throw new Error('示例默认页眉与程序不一致');

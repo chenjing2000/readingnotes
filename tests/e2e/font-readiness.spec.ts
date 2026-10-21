@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('cold font loading preserves the first layout including unique part-of-speech characters', async ({ page }) => {

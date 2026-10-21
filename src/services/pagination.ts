@@ -1,7 +1,7 @@
-import { collectHighlights, layoutKey, type HighlightRange, type Project, type Styles } from '../models/project';
+import { collectHighlights, layoutKey, senseSourceId, type HighlightRange, type Project, type Styles } from '../models/project';
 import type { LayoutDiagnostics, LayoutRecord } from './layoutVerification';
 
-export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string }[] };
+export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string; edit?: string }[] };
 export type Line = { block: Block; start: number; end: number; indent: boolean; height: number };
 export type Layout = { pages: HTMLElement[]; signature: string; warnings: string[]; diagnostics: LayoutDiagnostics };
 const FONT = '"Nunito Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif';
@@ -25,6 +25,8 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
     case 'ipa': fontSize = 23; color = '#666'; break;
     case 'pos': fontSize = 25; color = '#666'; break;
     case 'vocab-meaning': fontSize = 27; break;
+    case 'vocab-label': fontSize = 25; color = '#006d87'; break;
+    case 'vocab-example': fontSize = 25; break;
     case 'phrase': fontSize = styles.phraseSize; lineHeight = 1.25; fontWeight = '800'; color = styles.accent; break;
     case 'meaning': fontSize = 33; lineHeight = 1.35; break;
     case 'example': fontSize = 34; lineHeight = 1.43; break;
@@ -59,7 +61,7 @@ function appendText(element: HTMLElement, project: Project, block: Block, start:
       if (run) {
         const span = document.createElement('span');
         Object.assign(span.style, typography({ ...block, kind: run.kind === 'meaning' ? 'vocab-meaning' : run.kind }, project.styles), { lineHeight: 'inherit' });
-        span.dataset.edit = `${block.id}:${run.kind}`; span.textContent = value; content.append(span);
+        span.dataset.edit = run.edit ?? `${block.id}:${run.kind}`; span.textContent = value; content.append(span);
       } else content.append(document.createTextNode(value));
     }
   }
@@ -164,8 +166,8 @@ export async function paginate(project: Project): Promise<Layout> {
     const fontText = [
       ...Object.values(LABELS), ...Object.values(EXPRESSION_LABELS), '0123456789/', project.personalizedHeader, project.title,
       ...project.source.paragraphs.map(item => item.text), ...project.translation.paragraphs.map(item => item.text),
-      ...project.vocabulary.map(item => item.word + (item.ipa ?? '') + item.pos + item.meaning),
-      ...project.expressions.map(item => item.phrase + item.meaning + item.example + item.exampleTranslation), project.mainIdea,
+      ...project.vocabulary.map(item => item.word + (item.ipa ?? '') + item.senses.flatMap(sense => Object.values(sense)).join('')),
+      ...project.expressions.map(item => item.phrase + item.senses.flatMap(sense => Object.values(sense)).join('')), project.mainIdea,
     ].join('');
     try {
       await Promise.all([document.fonts.load('400 36px "Nunito Sans"', fontText), document.fonts.load('800 36px "Nunito Sans"', fontText), document.fonts.load('400 32px "Noto Sans SC"', fontText), document.fonts.load('700 32px "Noto Sans SC"', fontText)]);
@@ -238,12 +240,23 @@ export async function paginate(project: Project): Promise<Layout> {
           if (!entry) return [];
           let text = '';
           const runs: NonNullable<Block['runs']> = [];
-          for (const field of ['word', 'ipa', 'pos', 'meaning'] as const) {
-            if (field === 'ipa' && !entry.ipa) continue;
-            if (text) text += ' ';
-            const start = text.length; text += entry[field] ?? '';
-            runs.push({ start, end: text.length, kind: field });
+          function append(value: string, kind: string, edit?: string, separator = ' ') {
+            if (!value) return;
+            if (text && !text.endsWith('\n')) text += separator;
+            const start = text.length; text += value;
+            runs.push({ start, end: text.length, kind, edit });
           }
+          append(entry.word, 'word'); append(entry.ipa ?? '', 'ipa');
+          entry.senses.forEach((sense, senseIndex) => {
+            if (senseIndex && text) text += '\n';
+            append(sense.pos, 'pos', senseSourceId(entry.id, senseIndex, 'pos'));
+            append(sense.meaning, 'meaning', senseSourceId(entry.id, senseIndex, 'meaning'));
+            for (const field of ['example', 'exampleTranslation'] as const) if (sense[field]) {
+              if (text) text += '\n';
+              append(EXPRESSION_LABELS[field]!, 'vocab-label', senseSourceId(entry.id, senseIndex, field));
+              append(sense[field], 'vocab-example', senseSourceId(entry.id, senseIndex, field), '');
+            }
+          });
           return measureLines(project, { id: entry.id, text, kind: 'vocab', runs }, columnWidth, host, columnWidth, highlights);
         });
         if (entries.some(entry => entry && project.layoutOverrides.manualPageBreaks.includes(layoutKey('vocab', entry.id))) && used > 0) newPage();
@@ -251,8 +264,13 @@ export async function paginate(project: Project): Promise<Layout> {
       }
     }
     block({ id: 'expressions-heading', text: LABELS.expressions, kind: 'section-heading', gap: 25 });
-    for (const entry of project.expressions) for (const field of ['phrase', 'meaning', 'example', 'exampleTranslation'] as const) {
-      block({ id: `${entry.id}:${field}`, text: entry[field], kind: field, gap: field === 'phrase' ? 20 : field === 'example' ? 10 : 7 });
+    for (const entry of project.expressions) {
+      block({ id: `${entry.id}:phrase`, text: entry.phrase, kind: 'phrase', gap: 20 });
+      entry.senses.forEach((sense, index) => {
+        for (const field of ['meaning', 'example', 'exampleTranslation'] as const) {
+          block({ id: senseSourceId(entry.id, index, field), text: field === 'meaning' ? [sense.pos, sense.meaning].filter(Boolean).join(' ') : sense[field], kind: field, gap: field === 'example' ? 10 : 7 });
+        }
+      });
     }
     block({ id: 'main-heading', text: LABELS.mainIdea, kind: 'section-heading', gap: 25 });
     block({ id: 'mainIdea', text: project.mainIdea, kind: 'mainIdea', gap: 14 });

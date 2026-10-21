@@ -1,7 +1,7 @@
 import { test, expect, chromium } from '@playwright/test';
 import { mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 
 test('phrase can finish a page while its meaning and example continue on next', async ({ page }) => {
@@ -10,7 +10,7 @@ test('phrase can finish a page while its meaning and example continue on next', 
   const project = parseProject(fixture);
   project.title = 'Boundary'; project.vocabulary = [];
   project.source.paragraphs = [{ id: 'filler', text: 'Filler sentence. '.repeat(70) }];
-  project.expressions = [{ id: 'target', phrase: 'target phrase', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。', highlight: [] }];
+  project.expressions = [{ id: 'target', phrase: 'target phrase', senses: [{ pos: '', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。' }], highlight: [] }];
   await page.evaluate(input => window.renderProject(input), project);
   const space = await page.locator('[data-source="target:phrase"]').evaluate(node => {
     const body = node.closest('.page-body')!.getBoundingClientRect();
@@ -31,15 +31,15 @@ test('all rendered fields preserve exact text and visible glyphs fit, including 
   const project = parseProject(fixture);
   project.source.paragraphs[0].text += '\nA new line.\n\n👩🏽‍💻 é ' + 'X'.repeat(500) + ' hello ' + ' '.repeat(400) + 'world';
   project.vocabulary[0].word = 'W'.repeat(100);
-  project.vocabulary[0].meaning = '超长释义'.repeat(80);
+  project.vocabulary[0].senses[0].meaning = '超长释义'.repeat(80);
   project.translation.paragraphs[1].text += '，。！？）》'.repeat(200);
   project.styles.marginX = 200; project.styles.bodySize = 60;
   project.styles.lineHeight = 1.2; project.styles.translationSize = 54;
   await page.evaluate(input => window.renderProject(input), project);
   const texts: Record<string, string> = { title: project.title, mainIdea: project.mainIdea };
   for (const item of [...project.source.paragraphs, ...project.translation.paragraphs]) texts[item.id] = item.text;
-  for (const item of project.expressions) for (const key of ['phrase', 'meaning', 'example', 'exampleTranslation'] as const) texts[`${item.id}:${key}`] = item[key];
-  for (const item of project.vocabulary) texts[item.id] = [item.word, ...(item.ipa ? [item.ipa] : []), item.pos, item.meaning].join(' ');
+  for (const item of project.expressions) { texts[`${item.id}:phrase`] = item.phrase; for (const key of ['meaning', 'example', 'exampleTranslation'] as const) texts[`${item.id}:${key}`] = item.senses[0][key]; }
+  for (const item of project.vocabulary) texts[item.id] = [item.word, ...(item.ipa ? [item.ipa] : []), item.senses[0].pos, item.senses[0].meaning].join(' ');
   for (const [id, original] of Object.entries(texts)) {
     const fragments = page.locator(`[data-source="${id}"]`);
     expect(await fragments.evaluateAll(nodes => nodes.map(node => node.querySelector('.line-content')?.textContent ?? node.textContent).join(''))).toBe(original);

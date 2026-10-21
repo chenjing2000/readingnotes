@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import fixture from '../assets/projects/brainco/project.json';
+import fixture from '../assets/reference/project.schema2.json';
 import { collectHighlights, parseProject, toggleHighlight } from '../src/models/project';
 import { readProject } from '../src/services/projectIO';
 

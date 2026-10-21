@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
 import { unzipSync } from 'fflate';
 
 async function ready(page: Page) {
@@ -71,7 +71,7 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   const saved = JSON.parse(await readFile(path!, 'utf8'));
   expect(saved.source.paragraphs[1].text).toBe(changed);
   expect(saved.vocabulary[1].word).toBe('edited word');
-  expect(saved.expressions[0].example).toBe('An edited example.');
+  expect(saved.expressions[0].senses[0].example).toBe('An edited example.');
   expect(saved.mainIdea).toBe('新的主旨');
   await page.reload(); await ready(page);
   await page.getByRole('button', { name: '原文', exact: true }).click();

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
+import fixture from '../../assets/reference/project.schema2.json' with { type: 'json' };
 
-test('four-column vocabulary table edits and moves the selected row, inserts below it and handles an empty table', async ({ page }) => {
+test('three-column vocabulary table edits and moves the selected row, inserts below it and handles an empty table', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const project = { ...fixture, vocabulary: [
@@ -13,9 +13,9 @@ test('four-column vocabulary table edits and moves the selected row, inserts bel
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   const table = page.getByRole('table', { name: '词汇表', exact: true });
-  await expect(table.getByRole('columnheader')).toHaveText(['词头', '音标', '词性', '含义']);
+  await expect(table.getByRole('columnheader')).toHaveText(['词头', '音标', '含义']);
   const actions = page.getByRole('group', { name: '词汇行操作', exact: true });
-  await expect(actions.getByRole('button')).toHaveCount(4);
+  await expect(actions.getByRole('button')).toHaveCount(5);
   const up = actions.getByRole('button', { name: '上移选中词汇', exact: true });
   const down = actions.getByRole('button', { name: '下移选中词汇', exact: true });
   const remove = actions.getByRole('button', { name: '删除选中词汇', exact: true });
@@ -65,7 +65,7 @@ test('table fields preserve part of speech, drafts, page breaks and preview navi
   await page.getByLabel('选中词汇前换页', { exact: true }).check();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const snapshot = await page.evaluate(() => window.editor.project);
-  expect(snapshot.vocabulary[1]).toMatchObject({ ipa: '/changed/', pos: 'n.', meaning: '保留的含义' });
+  expect(snapshot.vocabulary[1]).toMatchObject({ ipa: '/changed/', senses: [{ pos: 'n.', meaning: '保留的含义' }] });
   expect(snapshot.layoutOverrides.manualPageBreaks).toContain(JSON.stringify(['vocab', fixture.vocabulary[1].id]));
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();

@@ -1,0 +1,39 @@
+import { expect, it } from 'vitest';
+import fixture from '../assets/reference/project.schema2.json';
+import { parseProject, collectHighlights, commitEntryHead, senseSourceId } from '../src/models/project';
+
+it('migrates old scalar senses without losing content and round-trips schema 3', () => {
+  const project = parseProject(fixture);
+  expect(project.schemaVersion).toBe(3);
+  expect(project.vocabulary[0].senses[0]).toMatchObject({ pos: fixture.vocabulary[0].pos, meaning: fixture.vocabulary[0].meaning });
+  expect(project.expressions[0].senses[0]).toMatchObject({ meaning: fixture.expressions[0].meaning, example: fixture.expressions[0].example });
+  expect(project.vocabulary[0]).not.toHaveProperty('pos');
+  expect(project.expressions[0]).not.toHaveProperty('example');
+  expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
+});
+
+it('keeps distinct senses and their examples together and rejects missing sense lists', () => {
+  const project = parseProject(fixture);
+  const sense = { pos: 'n.', meaning: '记录', example: 'Keep a record.', exampleTranslation: '保留记录。' };
+  const input = { ...project, schemaVersion: 3, vocabulary: [{ id: 'v', word: 'record', ipa: '', highlight: ['recorded'], senses: [sense, { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' }] }] };
+  expect(parseProject(input).vocabulary[0].senses).toEqual(input.vocabulary[0].senses);
+  expect(() => parseProject({ ...input, vocabulary: [{ ...input.vocabulary[0], senses: undefined }] })).toThrow();
+});
+
+it('commits manual surface forms to the head and rule list without mutating old variants', () => {
+  const input = parseProject({ ...fixture, source: { paragraphs: [{ id: 'p', text: 'ran running run' }] }, vocabulary: [{ id: 'v', word: '', pos: '', meaning: '', highlight: [] }] });
+  const first = commitEntryHead(input, 'vocabulary', 'v', 'ran');
+  expect(first.vocabulary[0]).toMatchObject({ word: 'ran', highlight: ['ran'] });
+  const second = commitEntryHead(first, 'vocabulary', 'v', 'running');
+  expect(second.vocabulary[0].highlight).toEqual(['ran', 'running']);
+  expect(collectHighlights(second).map(mark => mark.quote)).toEqual(['ran', 'running']);
+  expect(input.vocabulary[0].highlight).toEqual([]);
+  expect(commitEntryHead(second, 'vocabulary', 'v', 'running')).toBe(second);
+  const spaced = commitEntryHead(second, 'vocabulary', 'v', '  ran  ');
+  expect(spaced.vocabulary[0].highlight).toEqual(['ran', 'running', '  ran  ']);
+});
+
+it('uses unambiguous sense source IDs even when entry IDs contain separators', () => {
+  expect(senseSourceId('x', 1, 'meaning')).not.toBe(senseSourceId('x:sense:1', 0, 'meaning'));
+  expect(senseSourceId('x', 1, 'meaning')).not.toBe(senseSourceId('x', 2, 'meaning'));
+});

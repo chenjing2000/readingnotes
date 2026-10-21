@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { layoutKey, type Styles } from '../models/project';
+import { layoutKey, senseSourceId, type Styles } from '../models/project';
 import { useEditorViewModel } from '../viewmodels/useEditorViewModel';
 import VocabularyTable from './VocabularyTable';
 import SplitPane from './SplitPane';
 import AutoSizeTextarea from './AutoSizeTextarea';
+import EntryHeadInput from './EntryHeadInput';
 
 type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
@@ -25,6 +26,8 @@ export default function EditorView() {
   }, [layout]);
   useEffect(() => {
     if (!focusId) return;
+    const details = inputs.current.get(focusId)?.closest('details');
+    if (details) details.open = true;
     inputs.current.get(focusId)?.focus();
     inputs.current.get(focusId)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     setFocusId('');
@@ -36,7 +39,10 @@ export default function EditorView() {
     if (!id) return;
     const kind = line!.dataset.kind;
     if (kind === 'title' || kind === 'article') { setTab('原文'); setFocusId(kind === 'title' ? 'project:title' : `source:${id}`); }
-    else if (kind === 'vocab') { setTab('词汇'); setFocusId(`vocabulary:${target.closest<HTMLElement>('[data-edit]')?.dataset.edit ?? `${id}:word`}`); }
+    else if (kind === 'vocab') {
+      vm.selectVocabulary(line!.dataset.source!);
+      setTab('词汇'); setFocusId(`vocabulary:${target.closest<HTMLElement>('[data-edit]')?.dataset.edit ?? `${line!.dataset.source}:word`}`);
+    }
     else if (['phrase', 'meaning', 'example', 'exampleTranslation'].includes(kind!)) { setTab('表达'); setFocusId(`expressions:${id}`); }
     else if (kind === 'translation' || kind === 'mainIdea') { setTab('主旨与译文'); setFocusId(kind === 'mainIdea' ? 'project:mainIdea' : `translation:${id}`); }
   }
@@ -49,15 +55,20 @@ export default function EditorView() {
   function expressions() {
     const key = 'expressions';
     const name = '表达';
-    const labels = { phrase: '短语', meaning: '含义', example: '例句', exampleTranslation: '翻译' };
+    const labels = { meaning: '含义', example: '例句', exampleTranslation: '翻译' };
     return <>{project[key].map((entry, index) => <section className="edit-entry" key={entry.id}>
       <div className="entry-toolbar"><b>{name} {index + 1}</b><span className="spacer" /><button aria-label={`${name} ${index + 1} 上移`} disabled={index === 0} onClick={() => vm.reorder(key, index, -1)}>↑</button><button aria-label={`${name} ${index + 1} 下移`} disabled={index === project[key].length - 1} onClick={() => vm.reorder(key, index, 1)}>↓</button><button aria-label={`删除${name} ${index + 1}`} onClick={() => vm.removeEntry(key, entry.id)}>删除</button></div>
-      <table className="expression-table" aria-label={`表达 ${index + 1}`}><tbody>{Object.entries(labels).map(([property, label]) =>
-        <tr key={property}><th scope="row">{label}</th><td><AutoSizeTextarea label={`${label} ${index + 1}`}
-          value={entry[property as keyof typeof labels]}
-          inputRef={input => registerInput(`${key}:${entry.id}:${property}`, input)}
-          onChange={value => vm.setEntryField(key, entry.id, property, value)} /></td></tr>
-      )}</tbody></table>
+      <table className="expression-table" aria-label={`表达 ${index + 1}`}><tbody>
+        <tr><th scope="row">短语</th><td><EntryHeadInput multiline label={`短语 ${index + 1}`} value={entry.phrase} inputRef={input => registerInput(`${key}:${entry.id}:phrase`, input)} commit={value => vm.commitHead(key, entry.id, value)} /></td></tr>
+        {entry.senses.map((sense, senseIndex) => Object.entries(labels).map(([property, label]) =>
+          <tr key={`${senseIndex}:${property}`}><th scope="row">{label}{senseIndex > 0 && <small> {senseIndex + 1}</small>}</th><td>
+            {property === 'meaning' && <div className="entry-toolbar"><input aria-label={`表达词性 ${index + 1} 义项 ${senseIndex + 1}`} value={sense.pos} onChange={event => vm.setSenseField(key, entry.id, senseIndex, 'pos', event.target.value)} placeholder="词性" />
+              <button aria-label={`删除表达 ${index + 1} 义项 ${senseIndex + 1}`} disabled={entry.senses.length <= 1} onClick={() => vm.removeSense(key, entry.id, senseIndex)}>删除义项</button></div>}
+            <AutoSizeTextarea label={`${label} ${index + 1}${senseIndex ? ` 义项 ${senseIndex + 1}` : ''}`} value={sense[property as keyof typeof labels]}
+              inputRef={input => registerInput(`${key}:${senseSourceId(entry.id, senseIndex, property)}`, input)}
+              onChange={value => vm.setSenseField(key, entry.id, senseIndex, property as keyof typeof labels, value)} /></td></tr>
+        ))}</tbody></table>
+      <button aria-label={`表达 ${index + 1} 添加义项`} disabled={entry.senses.length >= 2000} onClick={() => vm.addSense(key, entry.id)}>添加义项</button>
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }

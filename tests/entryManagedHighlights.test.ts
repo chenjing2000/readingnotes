@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import fixture from '../assets/projects/brainco/project.json';
+import fixture from '../assets/reference/project.schema2.json';
 import { collectHighlights, parseProject, toggleHighlight, editParagraph } from '../src/models/project';
 
 function project(text = 'They ran and ran. They took off.') {
@@ -8,7 +8,7 @@ function project(text = 'They ran and ran. They took off.') {
 
 it('stores manually selected surface forms in entries, with no top-level highlights', () => {
   let result = toggleHighlight(project(), 'p', 5, 8);
-  expect(result.vocabulary[0]).toMatchObject({ word: 'ran', ipa: '', pos: '', meaning: '', highlight: ['ran'] });
+  expect(result.vocabulary[0]).toMatchObject({ word: 'ran', ipa: '', senses: [{ pos: '', meaning: '', example: '', exampleTranslation: '' }], highlight: ['ran'] });
   expect(collectHighlights(result).map(mark => mark.quote)).toEqual(['ran', 'ran']);
   result = toggleHighlight(result, 'p', 23, 31);
   expect(result.expressions[0]).toMatchObject({ phrase: 'took off', highlight: ['took off'] });
@@ -28,11 +28,11 @@ it('cancels a variant everywhere, keeping collected entries and undoable immutab
 
 it('uses matching dictionary entries and cancels duplicate or overlapping rules across both lists', () => {
   const input = project('RUN run take off.');
-  input.vocabulary = [{ id: 'v', word: 'run', pos: 'v.', ipa: '', meaning: '跑', highlight: [] }];
+  input.vocabulary = [{ id: 'v', word: 'run', ipa: '', senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }], highlight: [] }];
   const added = toggleHighlight(input, 'p', 0, 3);
   expect(added.vocabulary).toHaveLength(1); expect(added.vocabulary[0].highlight).toEqual(['RUN']);
-  added.expressions = [{ id: 'x', phrase: 'take off', meaning: '', example: '', exampleTranslation: '', highlight: ['take off'] }];
-  added.vocabulary.push({ id: 'off', word: 'off', ipa: '', pos: '', meaning: '', highlight: ['off'] });
+  added.expressions = [{ id: 'x', phrase: 'take off', senses: [{ pos: '', meaning: '', example: '', exampleTranslation: '' }], highlight: ['take off'] }];
+  added.vocabulary.push({ id: 'off', word: 'off', ipa: '', senses: [{ pos: '', meaning: '', example: '', exampleTranslation: '' }], highlight: ['off'] });
   const removed = toggleHighlight(added, 'p', 13, 16);
   expect(removed.expressions[0].highlight).toEqual([]);
   expect(removed.vocabulary[1].highlight).toEqual([]);

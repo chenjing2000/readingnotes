@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import fixture from '../assets/projects/brainco/project.json';
+import fixture from '../assets/reference/project.schema2.json';
 import { layoutKey, parseProject } from '../src/models/project';
 import { requestExport } from '../src/services/projectIO';
 import type { LayoutDiagnostics } from '../src/services/layoutVerification';

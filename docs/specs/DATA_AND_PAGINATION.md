@@ -1,6 +1,6 @@
 # 数据模型与分页引擎说明
 
-> 本文保留最初交接时的设计建议，不代表全部功能已经实现。当前 schema 2、已实现功能与明确简化以 `README.md` 和 `src/models/project.ts` 为准；整理复验记录见 `docs/CODE_REVIEW_REPORT.md`。文中代码路径相对于项目根目录。Markdown 导出、单元素样式及孤行优化尚未实现。
+> 本文保留最初交接时的设计建议，不代表全部功能已经实现。当前 schema 3、已实现功能与明确简化以 `README.md` 和 `src/models/project.ts` 为准；整理复验记录见 `docs/CODE_REVIEW_REPORT.md`。文中代码路径相对于项目根目录。Markdown 导出、单元素样式及孤行优化尚未实现。
 
 ## 项目文件
 

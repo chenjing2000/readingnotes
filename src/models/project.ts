@@ -20,7 +20,10 @@ const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c
 const paragraph = z.object({ id, text });
 const highlight = z.object({ id, paragraphId: id, start: z.number().int().nonnegative(), end: z.number().int().positive(), quote: text });
 const variants = z.array(text).max(2000).default([]);
-const common = {
+export const emptySense = () => ({ pos: '', meaning: '', example: '', exampleTranslation: '' });
+const senseSchema = z.object({ pos: text, meaning: text, example: text, exampleTranslation: text });
+const senses = z.array(senseSchema).min(1).max(2000);
+const legacyCommon = {
   id, title: text, personalizedHeader: text.default('SOME BIRDS ON TREE'), readingLevel: z.number().optional(),
   source: z.object({ paragraphs: z.array(paragraph).max(500) }),
   translation: z.object({ paragraphs: z.array(paragraph).max(500) }),
@@ -30,11 +33,16 @@ const common = {
   theme: z.literal('classic').default('classic'),
   layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
 };
-const currentSchema = z.object({ ...common, schemaVersion: z.literal(2), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
-const positionedSchema = currentSchema.extend({ highlights: z.array(highlight) });
-const legacySchema = z.object({ ...common, schemaVersion: z.literal(1), highlights: z.array(z.object({ id, text, style: z.string().optional() })) });
+const common = { ...legacyCommon,
+  vocabulary: z.array(z.object({ id, word: text, ipa: text.optional(), highlight: variants, senses })).max(2000),
+  expressions: z.array(z.object({ id, phrase: text, highlight: variants, senses })).max(2000),
+};
+const currentSchema = z.object({ ...common, schemaVersion: z.literal(3), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
+const version2Schema = z.object({ ...legacyCommon, schemaVersion: z.literal(2), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) });
+const legacySchema = z.object({ ...legacyCommon, schemaVersion: z.literal(1), highlights: z.array(z.object({ id, text, style: z.string().optional() })) });
 export type Project = z.infer<typeof currentSchema>;
 export type Styles = Project['styles'];
+export type Sense = Project['vocabulary'][number]['senses'][number];
 export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
 
@@ -42,14 +50,16 @@ export function parseProject(input: unknown): Project {
   let project: Project;
   let oldTerms: string[] = [];
   let oldMarks: z.infer<typeof highlight>[] = [];
-  if ((input as { schemaVersion?: number })?.schemaVersion === 1) {
-    const old = legacySchema.parse(input);
-    oldTerms = old.highlights.map(hint => hint.text);
-    project = currentSchema.parse({ ...old, schemaVersion: 2 });
-  } else {
-    if (input && typeof input === 'object' && 'highlights' in input) oldMarks = positionedSchema.parse(input).highlights;
-    project = currentSchema.parse(input);
-  }
+  const version = (input as { schemaVersion?: number })?.schemaVersion;
+  if (version === 1 || version === 2) {
+    const old = version === 1 ? legacySchema.parse(input) : version2Schema.parse(input);
+    if ('highlights' in old) oldTerms = old.highlights.map(hint => hint.text);
+    project = currentSchema.parse({ ...old, schemaVersion: 3,
+      vocabulary: old.vocabulary.map(({ pos, meaning, ...entry }) => ({ ...entry, senses: [{ ...emptySense(), pos, meaning }] })),
+      expressions: old.expressions.map(({ meaning, example, exampleTranslation, ...entry }) => ({ ...entry, senses: [{ pos: '', meaning, example, exampleTranslation }] })),
+    });
+  } else project = currentSchema.parse(input);
+  if (version !== 1 && input && typeof input === 'object' && 'highlights' in input) oldMarks = z.array(highlight).parse(input.highlights);
   const ids = [project.id, ...project.source.paragraphs.map(item => item.id), ...project.translation.paragraphs.map(item => item.id), ...project.vocabulary.map(item => item.id), ...project.expressions.map(item => item.id), ...oldMarks.map(item => item.id)];
   if (new Set(ids).size !== ids.length) throw new Error('项目含重复 ID，请为各条目使用唯一 ID。');
   for (const mark of oldMarks) {
@@ -61,7 +71,8 @@ export function parseProject(input: unknown): Project {
   const targets = [
     ['title', 'title'], ...project.source.paragraphs.map(item => ['article', item.id]),
     ...project.vocabulary.map(item => ['vocab', item.id]),
-    ...project.expressions.flatMap(item => ['phrase', 'meaning', 'example', 'exampleTranslation'].map(field => [field, `${item.id}:${field}`])),
+    ...project.expressions.flatMap(item => [['phrase', `${item.id}:phrase`], ...item.senses.flatMap((_, index) => ['meaning', 'example', 'exampleTranslation'].map(field => [field, senseSourceId(item.id, index, field)]))]),
+    ...project.vocabulary.flatMap(item => item.senses.flatMap((_, index) => ['example', 'exampleTranslation'].map(field => [field, senseSourceId(item.id, index, field)]))),
     ['mainIdea', 'mainIdea'], ...project.translation.paragraphs.map(item => ['translation', item.id]),
     ...['vocab-heading', 'expressions-heading', 'main-heading', 'translation-heading'].map(id => [id === 'vocab-heading' ? 'vocab-heading' : 'section-heading', id]),
   ];
@@ -106,8 +117,8 @@ function addHighlightTerm(project: Project, selected: string): Project {
   if (wordIndex !== -1) return { ...project, vocabulary: project.vocabulary.map((entry, index) => index === wordIndex ? { ...entry, highlight: [...entry.highlight, term] } : entry) };
   const phraseIndex = project.expressions.findIndex(entry => normalizeTerm(entry.phrase) === normalized);
   if (phraseIndex !== -1) return { ...project, expressions: project.expressions.map((entry, index) => index === phraseIndex ? { ...entry, highlight: [...entry.highlight, term] } : entry) };
-  if (/\s/u.test(term)) return { ...project, expressions: [...project.expressions, { id: newId(), phrase: term, meaning: '', example: '', exampleTranslation: '', highlight: [term] }] };
-  return { ...project, vocabulary: [...project.vocabulary, { id: newId(), word: term, pos: '', meaning: '', ipa: '', highlight: [term] }] };
+  if (/\s/u.test(term)) return { ...project, expressions: [...project.expressions, { id: newId(), phrase: term, highlight: [term], senses: [emptySense()] }] };
+  return { ...project, vocabulary: [...project.vocabulary, { id: newId(), word: term, ipa: '', highlight: [term], senses: [emptySense()] }] };
 }
 
 export function collectHighlights(project: Project): HighlightRange[] {
@@ -125,6 +136,22 @@ export function collectHighlights(project: Project): HighlightRange[] {
     result.push(...merged.map(match => ({ paragraphId: paragraph.id, ...match, quote: paragraph.text.slice(match.start, match.end) })));
   }
   return result;
+}
+
+export const senseSourceId = (id: string, index: number, field: string) => index === 0 ? `${id}:${field}` : JSON.stringify([id, index, field]);
+
+export function commitEntryHead(project: Project, key: 'vocabulary' | 'expressions', entryId: string, value: string): Project {
+  const property = key === 'vocabulary' ? 'word' : 'phrase';
+  let changed = false;
+  const entries = project[key].map(entry => {
+    const current = 'word' in entry ? entry.word : entry.phrase;
+    if (entry.id !== entryId || current === value) return entry;
+    const term = value.trim();
+    const highlight = term && !entry.highlight.includes(value) ? variants.parse([...entry.highlight, value]) : entry.highlight;
+    changed = true;
+    return { ...entry, [property]: value, highlight };
+  });
+  return changed ? { ...project, [key]: entries } as Project : project;
 }
 
 export function editParagraph(project: Project, paragraphId: string, next: string): Project {

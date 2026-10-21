@@ -5,9 +5,10 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   inputRef: (input: HTMLTextAreaElement | null) => void;
+  onBlur?: () => void;
 };
 
-export default function AutoSizeTextarea({ label, value, onChange, inputRef }: Props) {
+export default function AutoSizeTextarea({ label, value, onChange, inputRef, onBlur }: Props) {
   const input = useRef<HTMLTextAreaElement | null>(null);
   useLayoutEffect(() => {
     const element = input.current!;
@@ -27,5 +28,5 @@ export default function AutoSizeTextarea({ label, value, onChange, inputRef }: P
     return () => { observer.disconnect(); document.fonts.removeEventListener('loadingdone', fit); };
   }, [value]);
   return <textarea aria-label={label} rows={1} value={value} ref={element => { input.current = element; inputRef(element); }}
-    onChange={event => onChange(event.target.value)} />;
+    onChange={event => onChange(event.target.value)} onBlur={onBlur} />;
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { defaults, editParagraph, newId, parseProject, toggleHighlight, type Project, type Styles } from '../models/project';
+import { useEffect, useRef, useState } from 'react';
+import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, layoutKey, newId, parseProject, senseSourceId, toggleHighlight, type Project, type Sense, type Styles } from '../models/project';
 import { paginate, type Layout } from '../services/pagination';
 import { cacheDraft, download, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
@@ -20,8 +20,11 @@ export function useEditorViewModel() {
   const [cacheStatus, setCacheStatus] = useState('');
   const [lastFile, setLastFile] = useState('');
   const [rendered, setRendered] = useState<{ project: Project; layout: Layout } | null>(null);
+  const [highlightRefresh, setHighlightRefresh] = useState(0);
+  const lastHighlightRefresh = useRef(0);
   const [exporting, setExporting] = useState(false);
-  const ready = rendered?.project === project;
+  const [opening, setOpening] = useState(false);
+  const ready = !opening && rendered?.project === project;
   const hasFileChanges = lastFile !== stringify(project);
 
   function update(next: Project | ((current: Project) => Project)) {
@@ -44,11 +47,14 @@ export function useEditorViewModel() {
         if (cancelled) return;
         setRendered({ project, layout });
         window.editor = { project, signature: layout.signature, diagnostics: layout.diagnostics };
-        if (layout.warnings.length) setNotice(layout.warnings.join(' '));
+        if (highlightRefresh !== lastHighlightRefresh.current) {
+          lastHighlightRefresh.current = highlightRefresh;
+          setNotice(`已刷新高亮：命中 ${collectHighlights(project).length} 处。${layout.warnings.length ? ` ${layout.warnings.join(' ')}` : ''}`);
+        } else if (layout.warnings.length) setNotice(layout.warnings.join(' '));
       }).catch(reason => { if (!cancelled) setError(`分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
     }, 120);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [project]);
+  }, [project, highlightRefresh]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => { if (hasFileChanges) event.preventDefault(); };
     window.addEventListener('beforeunload', warn);
@@ -57,10 +63,12 @@ export function useEditorViewModel() {
 
   async function open(file?: File) {
     if (!file) return;
+    setOpening(true);
     try {
       const next = await readProject(file);
       update(next); setLastFile(stringify(next)); setError(''); setNotice(`已打开 ${file.name}；旧项目可通过撤销恢复。`);
     } catch (reason) { setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
+    finally { setOpening(false); }
   }
   function save() {
     try {
@@ -97,6 +105,12 @@ export function useEditorViewModel() {
     if (next === project) { setNotice('请选择完整的单词或词组。'); return; }
     update(next);
   }
+  function refreshHighlights() {
+    setRendered(null);
+    setHighlightRefresh(current => current + 1);
+    setError('');
+    setNotice('正在刷新高亮…');
+  }
   function setPageBreak(id: string, checked: boolean) {
     update(current => ({ ...current, layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: checked ? [...current.layoutOverrides.manualPageBreaks, id] : current.layoutOverrides.manualPageBreaks.filter(item => item !== id) } }));
   }
@@ -106,8 +120,32 @@ export function useEditorViewModel() {
   function setEntryField(key: EntryCollection, id: string, property: string, value: string) {
     update(current => ({ ...current, [key]: current[key].map(item => item.id === id ? { ...item, [property]: value } : item) }));
   }
+  function commitHead(key: EntryCollection, id: string, value: string) {
+    try {
+      const next = commitEntryHead(project, key, id, value);
+      if (next !== project) update(next);
+    } catch (reason) { setError(`词条保存失败：${String(reason)}`); }
+  }
+  function setSenseField(key: EntryCollection, id: string, index: number, field: keyof Sense, value: string) {
+    update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: entry.senses.map((sense, i) => i === index ? { ...sense, [field]: value } : sense) } : entry) }));
+  }
+  function addSense(key: EntryCollection, id: string) {
+    update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: [...entry.senses, emptySense()] } : entry) }));
+  }
+  function removeSense(key: EntryCollection, id: string, index: number) {
+    update(current => {
+      const entry = current[key].find(entry => entry.id === id);
+      if (!entry || entry.senses.length <= 1) return current;
+      const replacements = new Map<string, string | null>();
+      for (let i = index; i < entry.senses.length; i++) for (const field of ['meaning', 'example', 'exampleTranslation']) {
+        replacements.set(layoutKey(field, senseSourceId(id, i, field)), i === index ? null : layoutKey(field, senseSourceId(id, i - 1, field)));
+      }
+      return { ...current, [key]: current[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item),
+        layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: current.layoutOverrides.manualPageBreaks.flatMap(mark => replacements.has(mark) ? replacements.get(mark) ? [replacements.get(mark)!] : [] : [mark]) } };
+    });
+  }
   function addEntry(key: EntryCollection) {
-    update(current => ({ ...current, [key]: [...current[key], key === 'vocabulary' ? { id: newId(), word: '', pos: '', meaning: '', ipa: '', highlight: [] } : { id: newId(), phrase: '', meaning: '', example: '', exampleTranslation: '', highlight: [] }] }));
+    update(current => ({ ...current, [key]: [...current[key], key === 'vocabulary' ? { id: newId(), word: '', ipa: '', highlight: [], senses: [emptySense()] } : { id: newId(), phrase: '', highlight: [], senses: [emptySense()] }] }));
   }
   function removeEntry(key: EntryCollection, id: string) {
     update(current => ({ ...current, [key]: current[key].filter(item => item.id !== id) }));
@@ -125,7 +163,7 @@ export function useEditorViewModel() {
     removeEntry('vocabulary', selectedVocabulary.id);
   }
   function insertVocabularyBelow() {
-    const entry = { id: newId(), word: '', pos: '', meaning: '', ipa: '', highlight: [] };
+    const entry = { id: newId(), word: '', ipa: '', highlight: [], senses: [emptySense()] };
     update(current => {
       const vocabulary = [...current.vocabulary];
       const index = vocabulary.findIndex(item => item.id === selectedVocabulary?.id);
@@ -150,7 +188,7 @@ export function useEditorViewModel() {
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
-    highlightRange, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
+    highlightRange, refreshHighlights, commitHead, setSenseField, addSense, removeSense, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
     clearWarnings, clearError, downloadRejectedDraft,
   };

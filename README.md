@@ -22,7 +22,7 @@ src/
   models/project.ts                 数据结构、校验、迁移和高亮规则
   viewmodels/useEditorViewModel.ts   编辑状态、撤销重做和操作命令
   views/EditorView.tsx               界面与命令绑定、焦点、预览挂载
-  views/VocabularyTable.tsx          四列词汇表及选中行操作
+  views/VocabularyTable.tsx          三列词汇表、多义项及选中行操作
   views/SplitPane.tsx                可拖动和键盘调节的左右分隔线
   views/AutoSizeTextarea.tsx         表达输入按内容、字体与栏宽适应高度
   views/editor.css                  界面和卡片样式
@@ -37,7 +37,7 @@ View 通过 ViewModel 执行编辑命令，ViewModel 调用 Model 与 Services�
 ## 项目 skills 与 LLM 生成 JSON
 
 - [项目代码审查 skill](docs/skills/project-code-review/SKILL.md)：包含本程序的轻量 MVVM 分层、依赖方向与数据格式同步要求。
-- [文章转项目 JSON skill](docs/skills/article-to-englishnotes/SKILL.md)：自包含 schema 2 数据契约、完整有效示例、原文/翻译/词汇/表达整理规则、样式默认值及高亮约束。可将该 `SKILL.md` 与文章一起上传给 ChatGPT 等 LLM，并要求：“严格按 skill，将这篇文章生成 EnglishNotes 可导入的完整 JSON，只输出 JSON，不加 Markdown 围栏。”
+- [文章转项目 JSON skill](docs/skills/article-to-englishnotes/SKILL.md)：自包含 schema 3 数据契约、完整有效示例、原文/翻译/词汇/表达整理规则、样式默认值及高亮约束。可将该 `SKILL.md` 与文章一起上传给 ChatGPT 等 LLM，并要求：“严格按 skill，将这篇文章生成 EnglishNotes 可导入的完整 JSON，只输出 JSON，不加 Markdown 围栏。”
 
 将生成结果保存为 UTF-8 `.json`，在程序中“打开 JSON”。在本项目根目录也可先验证：
 
@@ -68,9 +68,11 @@ npm.cmd start
 
 ## 编辑、保存、重新打开
 
-1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `assets/projects/brainco/project.json` 或自己保存的项目。旧版 schema 1 自动迁移为 schema 2；原始附件不被改写。
-2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇页使用“词头 / 音标 / 词性 / 含义”四列表格，一词一行；各单元格采用不可拉伸的单行输入框，长内容可在框内横向查看。点击或编辑单元格选中该行，下方 `↑ / ↓ / × / +` 分别上移、下移、删除及在选中行下方插入空白行；插入后自动选中新行并聚焦词头，空表也可用 `+` 建立第一行。表达页每条内容使用四行两列表格，题头依次为“短语 / 含义 / 例句 / 翻译”，输入框按实际文字与栏宽自动调整高度，支持添加、删除及上下排序。两种表格的题头和内容均垂直居中。英文与中文段落可添加、删除；空译文段落会保留并提示。
-3. 在英文编辑框选中一个完整单词或词组，点“标注 / 取消所选重点”。添加时直接按所选表面形式加入词汇或表达条目，词典形式留给后续 ChatGPT 整理；已有同名条目则复用。只选半个单词会提示重新选择。同一规则命中的所有位置同步高亮。取消时从相关条目的列表移除覆盖所选内容的规则，全部相同命中一起取消，条目本身保留；可撤销/重做。
+1. 首次打开自动载入 BrainCo；也可点“打开 JSON”选择 `assets/projects/brainco/project.json` 或自己保存的项目。旧版 schema 1/2 自动迁移为 schema 3；原始附件不被改写。
+2. 在“原文 / 词汇 / 表达 / 主旨与译文”编辑所有内容。词汇页使用“词头 / 音标 / 含义”三列表格，一词一行；词头、音标采用不可拉伸的单行输入框；含义列每义项一行，词性后紧跟对应释义，多个义项分行且垂直居中。点击或编辑单元格选中该行，下方 `↑ / ↓ / × / +` 分别上移、下移、删除及在选中行下方插入空白行；加号右侧 `↻` 重新扫描词汇与表达所有条目的 `highlight` 列表，显示命中数，不补入词典词头、不重新启用空列表、不改变撤销历史；插入后自动选中新行并聚焦词头，空表也可用 `+` 建立第一行。表达页每条内容使用两列表格，短语显示一次，各义项依次显示“含义 / 例句 / 翻译”，词性在对应含义内编辑；词汇选中后可展开“选中词汇的义项与例句”，分别增删义项、编辑对应例句和翻译；输入框按实际文字与栏宽自动调整高度，支持添加、删除及上下排序。两种表格的题头和内容均垂直居中。英文与中文段落可添加、删除；空译文段落会保留并提示。
+3. 手工编辑词头或短语，在失焦时将完整内容同时保存到 `word` / `phrase` 和条目的 `highlight` 列表；词头也可按 Enter 完成。保留已有变体，不保存逐键输入的中间片段。词典还原由后续 ChatGPT 按 skill 完成，程序刷新只匹配列表。
+
+   在英文编辑框选中一个完整单词或词组，点“标注 / 取消所选重点”。添加时直接按所选表面形式加入词汇或表达条目，词典形式留给后续 ChatGPT 整理；已有同名条目则复用。只选半个单词会提示重新选择。同一规则命中的所有位置同步高亮。取消时从相关条目的列表移除覆盖所选内容的规则，全部相同命中一起取消，条目本身保留；可撤销/重做。
 
    高亮只由词汇和表达条目的 `highlight` 字符串列表管理，保存、草稿和导出均不包含顶层 `highlights`。例如词汇可写 `"highlight": ["run", "runs", "ran", "running"]`，表达可写 `"highlight": ["take off", "took off"]`。程序随当前原文计算命中：忽略大小写，按完整词/词组边界匹配，词组内允许连续空白或段内换行，不跨段落，重复及重叠命中合并。原文编辑不改写列表；旧版顶层高亮导入后先迁移到条目再移除，不覆盖原 JSON 文件，重新保存即可得到新格式。
 4. 点击预览文字，可定位到对应编辑字段。预览本身不是直接输入区域。
@@ -118,8 +120,8 @@ E2E 默认自动启动 4317 端口服务并使用真实 Chromium，不复用已�
 - `src/services/layoutVerification.ts`：校验预览诊断信息，定位项目数据、首条排版记录或页数差异。
 - 逐行诊断不写入项目 JSON；若附带诊断会使请求超过 5 MiB，则先简化为项目校验值与页数，摘要仍超限时完全省略诊断，以保留原本合法的项目请求。失败时会说明诊断缺失，原有项目与排版签名检查继续执行。
 - `src/server/index.ts`：本机 Chromium 截图和 ZIP；`src/main.tsx` 的 `/render` 使用与预览相同的分页器。
-- `assets/projects/brainco/project.json` 已更新为条目管理高亮的当前格式；其原始 schema 1 副本保留在 `assets/reference/v17/project.schema1.json`，原文/译文 Markdown 和其他参考资料保持。`artifacts/demo/project.json` 为可继续导入的演示项目。
-- schema 2 不再有顶层 `highlights`，只保存每个词汇/表达的 `highlight: string[]`。命中位置只在渲染时计算，不进入 JSON、草稿或导出项目文件。
+- `assets/projects/brainco/project.json` 已更新为条目管理高亮的当前格式；其原始 schema 1 副本保留在 `assets/reference/v17/project.schema1.json`，上一版 schema 2 副本保留在 `assets/reference/project.schema2.json`，原文/译文 Markdown 和其他参考资料保持。`artifacts/demo/project.json` 为可继续导入的演示项目。
+- schema 3 使用词汇/表达条目的 `senses: [{ pos, meaning, example, exampleTranslation }]` 保存不同义项与对应例句，不使用并行数组。旧格式的单个义项迁移到该列表，未知字段内容留空；保留项目、条目 ID 及手动分页。新格式不再有顶层 `highlights`，只保存每个词汇/表达的 `highlight: string[]`。命中位置只在渲染时计算，不进入 JSON、草稿或导出项目文件。
 - 旧版 schema 1 文本标注或旧 schema 2 位置标注导入时迁移为条目规则，错误的旧坐标仍拒绝；无法直接归入同名条目的表面形式作为待整理条目保留。后续可按文章转 JSON skill 让 ChatGPT 还原词典形式、合并变体，不能丢弃原始列表。手动分页键仍允许最长 2048 字符以容纳业务 ID 的 JSON 转义。
 - 全局样式在 `styles`；手动分页在 `layoutOverrides.manualPageBreaks`，采用 `JSON.stringify([kind, sourceId])` 的字符串键隔离业务 ID。旧的裸 ID 会迁移。`elementStyles` 仅保留数据，当前不应用单元素覆写。
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import fixture from '../assets/projects/brainco/project.json';
+import fixture from '../assets/reference/project.schema2.json';
 import { collectHighlights, parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
 
 describe('project persistence and precise highlights', () => {
@@ -14,7 +14,7 @@ describe('project persistence and precise highlights', () => {
   });
   it('migrates without changing either independent snapshot', () => {
     const project = parseProject(fixture);
-    expect(project.schemaVersion).toBe(2);
+    expect(project.schemaVersion).toBe(3);
     for (const [key, filename] of [['source', 'article'], ['translation', 'translation']] as const) {
       const snapshot = readFileSync(`assets/projects/brainco/${filename}.md`, 'utf8').replace(/\r\n/g, '\n').trim();
       expect(project[key].paragraphs.map(item => item.text).join('\n\n')).toBe(snapshot);
