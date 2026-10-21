@@ -42,6 +42,7 @@ const version2Schema = z.object({ ...legacyCommon, schemaVersion: z.literal(2), 
 const legacySchema = z.object({ ...legacyCommon, schemaVersion: z.literal(1), highlights: z.array(z.object({ id, text, style: z.string().optional() })) });
 export type Project = z.infer<typeof currentSchema>;
 export type Styles = Project['styles'];
+export type EntryCollection = 'vocabulary' | 'expressions';
 export type Sense = Project['vocabulary'][number]['senses'][number];
 export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
@@ -140,7 +141,7 @@ export function collectHighlights(project: Project): HighlightRange[] {
 
 export const senseSourceId = (id: string, index: number, field: string) => index === 0 ? `${id}:${field}` : JSON.stringify([id, index, field]);
 
-export function commitEntryHead(project: Project, key: 'vocabulary' | 'expressions', entryId: string, value: string): Project {
+export function commitEntryHead(project: Project, key: EntryCollection, entryId: string, value: string): Project {
   const property = key === 'vocabulary' ? 'word' : 'phrase';
   let changed = false;
   const entries = project[key].map(entry => {
@@ -152,6 +153,22 @@ export function commitEntryHead(project: Project, key: 'vocabulary' | 'expressio
     return { ...entry, [property]: value, highlight };
   });
   return changed ? { ...project, [key]: entries } as Project : project;
+}
+
+export function removeEntrySense(project: Project, key: EntryCollection, id: string, index: number): Project {
+  const entry = project[key].find(entry => entry.id === id);
+  if (!entry || entry.senses.length <= 1 || index < 0 || index >= entry.senses.length) return project;
+  const replacements = new Map<string, string | null>();
+  for (let i = index; i < entry.senses.length; i++) for (const field of ['meaning', 'example', 'exampleTranslation']) {
+    replacements.set(layoutKey(field, senseSourceId(id, i, field)), i === index ? null : layoutKey(field, senseSourceId(id, i - 1, field)));
+  }
+  const manualPageBreaks = project.layoutOverrides.manualPageBreaks.flatMap(mark => {
+    if (!replacements.has(mark)) return [mark];
+    const next = replacements.get(mark);
+    return next ? [next] : [];
+  });
+  return { ...project, [key]: project[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item),
+    layoutOverrides: { ...project.layoutOverrides, manualPageBreaks } };
 }
 
 export function editParagraph(project: Project, paragraphId: string, next: string): Project {

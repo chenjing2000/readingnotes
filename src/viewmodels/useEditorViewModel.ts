@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, layoutKey, newId, parseProject, senseSourceId, toggleHighlight, type Project, type Sense, type Styles } from '../models/project';
+import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, toggleHighlight, type EntryCollection, type Project, type Sense, type Styles } from '../models/project';
 import { paginate, type Layout } from '../services/pagination';
 import { cacheDraft, download, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
-type EntryCollection = 'vocabulary' | 'expressions';
 type ParagraphCollection = 'source' | 'translation';
 const stringify = (project: Project) => JSON.stringify(project, null, 2);
 
@@ -24,6 +23,7 @@ export function useEditorViewModel() {
   const lastHighlightRefresh = useRef(0);
   const [exporting, setExporting] = useState(false);
   const [opening, setOpening] = useState(false);
+  const openRequest = useRef(0);
   const ready = !opening && rendered?.project === project;
   const hasFileChanges = lastFile !== stringify(project);
 
@@ -63,12 +63,14 @@ export function useEditorViewModel() {
 
   async function open(file?: File) {
     if (!file) return;
+    const request = ++openRequest.current;
     setOpening(true);
     try {
       const next = await readProject(file);
+      if (request !== openRequest.current) return;
       update(next); setLastFile(stringify(next)); setError(''); setNotice(`已打开 ${file.name}；旧项目可通过撤销恢复。`);
-    } catch (reason) { setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
-    finally { setOpening(false); }
+    } catch (reason) { if (request === openRequest.current) setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
+    finally { if (request === openRequest.current) setOpening(false); }
   }
   function save() {
     try {
@@ -133,16 +135,7 @@ export function useEditorViewModel() {
     update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: [...entry.senses, emptySense()] } : entry) }));
   }
   function removeSense(key: EntryCollection, id: string, index: number) {
-    update(current => {
-      const entry = current[key].find(entry => entry.id === id);
-      if (!entry || entry.senses.length <= 1) return current;
-      const replacements = new Map<string, string | null>();
-      for (let i = index; i < entry.senses.length; i++) for (const field of ['meaning', 'example', 'exampleTranslation']) {
-        replacements.set(layoutKey(field, senseSourceId(id, i, field)), i === index ? null : layoutKey(field, senseSourceId(id, i - 1, field)));
-      }
-      return { ...current, [key]: current[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item),
-        layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: current.layoutOverrides.manualPageBreaks.flatMap(mark => replacements.has(mark) ? replacements.get(mark) ? [replacements.get(mark)!] : [] : [mark]) } };
-    });
+    update(current => removeEntrySense(current, key, id, index));
   }
   function addEntry(key: EntryCollection) {
     update(current => ({ ...current, [key]: [...current[key], key === 'vocabulary' ? { id: newId(), word: '', ipa: '', highlight: [], senses: [emptySense()] } : { id: newId(), phrase: '', highlight: [], senses: [emptySense()] }] }));

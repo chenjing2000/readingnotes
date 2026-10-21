@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import fixture from '../assets/reference/project.schema2.json';
-import { parseProject, collectHighlights, commitEntryHead, senseSourceId } from '../src/models/project';
+import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntrySense, senseSourceId } from '../src/models/project';
 
 it('migrates old scalar senses without losing content and round-trips schema 3', () => {
   const project = parseProject(fixture);
@@ -36,4 +36,21 @@ it('commits manual surface forms to the head and rule list without mutating old 
 it('uses unambiguous sense source IDs even when entry IDs contain separators', () => {
   expect(senseSourceId('x', 1, 'meaning')).not.toBe(senseSourceId('x:sense:1', 0, 'meaning'));
   expect(senseSourceId('x', 1, 'meaning')).not.toBe(senseSourceId('x', 2, 'meaning'));
+});
+
+it('removes a sense and remaps only its entry page breaks without mutating the source', () => {
+  const input = parseProject(fixture);
+  const entry = input.expressions[0];
+  entry.senses.push({ pos: '', meaning: '另一含义', example: 'Another example.', exampleTranslation: '另一个例句。' });
+  const first = layoutKey('meaning', senseSourceId(entry.id, 0, 'meaning'));
+  const second = layoutKey('example', senseSourceId(entry.id, 1, 'example'));
+  const unrelated = layoutKey('article', input.source.paragraphs[0].id);
+  input.layoutOverrides.manualPageBreaks = [first, second, unrelated];
+  const result = removeEntrySense(input, 'expressions', entry.id, 0);
+  expect(result.expressions[0].senses).toEqual([entry.senses[1]]);
+  expect(result.layoutOverrides.manualPageBreaks).toEqual([layoutKey('example', senseSourceId(entry.id, 0, 'example')), unrelated]);
+  expect(input.expressions[0].senses).toHaveLength(2);
+  expect(input.layoutOverrides.manualPageBreaks).toEqual([first, second, unrelated]);
+  expect(parseProject(JSON.parse(JSON.stringify(result)))).toEqual(result);
+  expect(removeEntrySense(result, 'expressions', entry.id, 0)).toBe(result);
 });
