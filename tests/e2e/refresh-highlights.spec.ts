@@ -40,7 +40,7 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await refresh.click(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await expect(marks).toHaveText(['ran', 'record', 'took off', 'take off']);
-  await expect(page.getByRole('status')).toContainText('已刷新高亮：命中 4 处。');
+  await expect(page.getByLabel('信息提示栏')).toHaveText('');
   const pending = page.waitForEvent('download'); await page.getByRole('button', { name: '保存 JSON', exact: true }).click();
   const saved = JSON.parse(await readFile((await (await pending).path())!, 'utf8'));
   expect(saved.schemaVersion).toBe(4);
@@ -83,7 +83,7 @@ test('import stays unready while reading and refreshing unchanged rules does not
     await page.getByRole('button', { name: '刷新词汇与表达高亮', exact: true }).click();
     await expect(page.locator('[data-ready="true"]')).toBeVisible();
   }
-  await expect(page.getByRole('status')).toContainText('已刷新高亮：命中 0 处。');
+  await expect(page.getByLabel('信息提示栏')).toHaveText('');
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   expect(await page.evaluate(() => window.editor.project)).toEqual(original);

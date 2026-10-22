@@ -26,7 +26,7 @@ test('entry rules collect manual variants and persist without a top-level highli
   await expect(marks).toHaveCount(3);
   await source.evaluate(node => { const textarea = node as HTMLTextAreaElement; const start = textarea.value.indexOf('runner'); textarea.focus(); textarea.setSelectionRange(start, start + 3); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
-  await expect(page.getByText('请选择完整的单词或词组。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('Warning: 请选择完整的单词或词组。');
   expect(await page.evaluate(() => window.editor.project.vocabulary.length)).toBe(1);
   for (const term of ['runner', 'ran away']) {
     await source.evaluate((node, term) => { const textarea = node as HTMLTextAreaElement; const start = textarea.value.indexOf(term); textarea.focus(); textarea.setSelectionRange(start, start + term.length); }, term);

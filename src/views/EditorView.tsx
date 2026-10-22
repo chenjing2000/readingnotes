@@ -5,12 +5,13 @@ import VocabularyTable from './VocabularyTable';
 import SplitPane from './SplitPane';
 import AutoSizeTextarea from './AutoSizeTextarea';
 import EntryHeadInput from './EntryHeadInput';
+import SettingInput from './SettingInput';
 
 type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
 export default function EditorView() {
   const vm = useEditorViewModel();
-  const { project, notice, error, cacheStatus, settingsNotice, settingsReady, ready, exporting, pages, layout, hasFileChanges, canUndo, canRedo, rejectedDraft } = vm;
+  const { project, warning, error, settingsReady, ready, exporting, pages, layout, hasFileChanges, canUndo, canRedo, rejectedDraft } = vm;
   const [tab, setTab] = useState<Tab>('原文');
   const [zoom, setZoom] = useState(0.46);
   const preview = useRef<HTMLDivElement>(null);
@@ -69,20 +70,20 @@ export default function EditorView() {
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
-  const fontFields: [keyof Styles, string, number, number, number][] = [
-    ['titleSize', '标题字号', 12, 80, 1], ['bodySize', '英文正文字号', 12, 80, 1], ['mainIdeaSize', '主要内容字号', 12, 80, 1], ['translationSize', '中文译文字号', 12, 80, 1],
-    ['headerSize', '页眉字号', 12, 80, 1], ['footerSize', '页脚字号', 12, 80, 1], ['wordSize', '词汇单词字号', 12, 80, 1], ['vocabularySize', '词汇其余内容字号', 12, 80, 1],
-    ['phraseSize', '表达短语字号', 12, 80, 1], ['expressionSize', '表达其余内容字号', 12, 80, 1], ['headingSize', '栏目标题字号', 12, 80, 1],
+  const fontFields: [keyof Styles, string][] = [
+    ['titleSize', '标题字号'], ['bodySize', '英文正文字号'], ['mainIdeaSize', '主要内容字号'], ['translationSize', '中文译文字号'],
+    ['headerSize', '页眉字号'], ['footerSize', '页脚字号'], ['wordSize', '词汇单词字号'], ['vocabularySize', '词汇其余内容字号'],
+    ['phraseSize', '表达短语字号'], ['expressionSize', '表达其余内容字号'], ['headingSize', '栏目标题字号'],
   ];
   const otherFields: typeof fontFields = [
-    ['pageWidth', '页面宽度', 400, 4000, 1], ['pageHeight', '页面高度', 400, 4000, 1],
-    ['lineHeight', '英文行距', 1.2, 2.4, 0.05], ['translationLineHeight', '中文行距', 1.2, 2.4, 0.02], ['paragraphGap', '段距', 0, 100, 1],
-    ['marginX', '左右边距', 24, 200, 1], ['marginTop', '上边距', 24, 200, 1], ['marginBottom', '底部预留', 65, 400, 1],
+    ['pageWidth', '页面宽度'], ['pageHeight', '页面高度'],
+    ['lineHeight', '英文行距'], ['translationLineHeight', '中文行距'], ['paragraphGap', '段距'],
+    ['marginX', '左右边距'], ['marginTop', '上边距'], ['marginBottom', '底部预留'],
   ];
   function settingsTable(name: string, fields: typeof fontFields) {
     return <><h2 className="settings-heading">{name}</h2><table className="settings-table" aria-label={name}><thead><tr><th>参数</th><th>数值</th></tr></thead><tbody>
-      {fields.map(([key, label, min, max, step]) => <tr key={key}><th scope="row"><label htmlFor={`setting-${key}`}>{label}</label></th><td>
-        <input id={`setting-${key}`} type="number" min={min} max={max} step={step} value={project.styles[key]} onChange={event => vm.setStyle(key, event.target.value === '' ? 0 : Number(event.target.value))} />
+      {fields.map(([key, label]) => <tr key={key}><th scope="row"><label htmlFor={`setting-${key}`}>{label}</label></th><td>
+        <SettingInput id={`setting-${key}`} value={project.styles[key]} decimal={key === 'lineHeight' || key === 'translationLineHeight'} onChange={value => vm.setStyle(key, value)} />
       </td></tr>)}
     </tbody></table></>;
   }
@@ -91,8 +92,7 @@ export default function EditorView() {
       <label className="button">打开 JSON<input type="file" accept=".json,application/json" aria-label="打开项目 JSON" onChange={event => { void vm.open(event.target.files?.[0]); event.target.value = ''; }} /></label>
       <button onClick={vm.save}>保存 JSON</button><button className="primary" disabled={!ready || exporting} onClick={() => void vm.exportImages()}>{exporting ? '正在导出…' : '导出全部 PNG / ZIP'}</button>
     </header>
-    <div className="status-bar"><span>{cacheStatus}</span><span>{!hasFileChanges ? 'JSON 下载已发起 / 项目已打开' : 'JSON 尚有未另存改动'}</span><span className="spacer" /><span>{ready ? `${pages} 页 · 排版就绪` : '正在测量字体与分页…'}</span></div>
-    {error && <div className="error-banner" role="alert">{error}<button onClick={vm.clearError}>关闭</button></div>}
+    <div className="status-bar"><span>{!hasFileChanges ? 'JSON 下载已发起 / 项目已打开' : 'JSON 尚有未另存改动'}</span><span className="spacer" /><span>{ready ? `${pages} 页 · 排版就绪` : '正在测量字体与分页…'}</span></div>
     <SplitPane left={<aside className="editor-panel" id="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
       <nav aria-label="编辑板块">{(['原文', '词汇', '表达', '主旨与译文', '样式'] as Tab[]).map(name => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>)}</nav>
       <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>Undo</button><button onClick={vm.redo} disabled={!canRedo}>Redo</button><span>支持最近 10 次修改</span></div>
@@ -121,10 +121,9 @@ export default function EditorView() {
           <button className="add-button" onClick={() => vm.addParagraph('translation')}>添加中文段落</button>
         </>}
         {tab === '样式' && <><p className="hint">字号与页面尺寸单位为 px；修改有效配置后自动保存到 config/settings.json。</p>
-          <p role="status" className="hint">{settingsNotice}</p>{settingsTable('字号设置', fontFields)}{settingsTable('其余设置', otherFields)}
+          {settingsTable('字号设置', fontFields)}{settingsTable('其余设置', otherFields)}
           <button className="add-button" onClick={vm.resetStyles}>恢复模板默认</button></>}
-        {!!project.warnings.length && <div className="warning-list">{project.warnings.map((warning, index) => <p key={index}>{warning}</p>)}<button onClick={vm.clearWarnings}>已阅读提示</button></div>}
-      </div><div className="notice" role="status">{notice}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
+      </div><div className={`notice${error ? ' notice-error' : warning ? ' notice-warning' : ''}`} aria-label="信息提示栏">{error ? <div role="alert">Error: {error}<button onClick={vm.clearError}>关闭</button></div> : warning ? <div role="status">Warning: {warning.text}</div> : null}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
     </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>{project.styles.pageWidth} × {project.styles.pageHeight} px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
       <div className="preview-scroll"><div className="preview" style={{ '--zoom': zoom } as React.CSSProperties} data-ready={ready} ref={preview} onClick={jump} />
       </div>

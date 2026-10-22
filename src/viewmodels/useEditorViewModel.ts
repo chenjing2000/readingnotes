@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, splitSenseMeaning, toggleHighlight, type EntryCollection, projectDocument, styleSchema, type RenderProject, type Project, type Sense, type Styles } from '../models/project';
+import { commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, splitSenseMeaning, toggleHighlight, type EntryCollection, projectDocument, styleSchema, type RenderProject, type Project, type Sense, type Styles } from '../models/project';
 import { paginate, type Layout } from '../services/pagination';
 import { cacheDraft, download, loadSettings, saveSettings, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
@@ -14,18 +14,32 @@ export function useEditorViewModel() {
   const vocabularyIndex = project.vocabulary.findIndex(entry => entry.id === vocabularySelection);
   const selectedVocabularyIndex = vocabularyIndex >= 0 ? vocabularyIndex : project.vocabulary.length ? 0 : -1;
   const selectedVocabulary = project.vocabulary[selectedVocabularyIndex];
-  const [notice, setNotice] = useState(boot.notice);
-  const [error, setError] = useState('');
-  const [cacheStatus, setCacheStatus] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const error = Object.values(errors)[0] ?? '';
+  const [warning, setWarning] = useState<{ text: string } | null>(null);
+  function reportError(source: string, text: string) {
+    setErrors(current => {
+      if ((current[source] ?? '') === text) return current;
+      const next = { ...current }; if (text) next[source] = text; else delete next[source]; return next;
+    });
+  }
+  function showWarning(text: string) { setWarning({ text }); }
+  useEffect(() => {
+    if (!warning) return;
+    const timer = setTimeout(() => setWarning(current => current === warning ? null : current), 6000);
+    return () => clearTimeout(timer);
+  }, [warning]);
+  useEffect(() => {
+    if (boot.rejected && !boot.cacheBlocked) showWarning(boot.notice);
+  }, []);
+  useEffect(() => { if (project.warnings.length) showWarning(project.warnings.join(' ')); }, [project.warnings]);
   const [lastFile, setLastFile] = useState('');
   const [rendered, setRendered] = useState<{ project: RenderProject; layout: Layout } | null>(null);
   const [highlightRefresh, setHighlightRefresh] = useState(0);
-  const lastHighlightRefresh = useRef(0);
   const [exporting, setExporting] = useState(false);
   const [opening, setOpening] = useState(false);
   const openRequest = useRef(0);
   const [settingsReady, setSettingsReady] = useState(false);
-  const [settingsNotice, setSettingsNotice] = useState('正在读取配置…');
   const savedSettings = useRef('');
   const settingsQueue = useRef(Promise.resolve());
   const pendingSettingsSaves = useRef(0);
@@ -50,29 +64,29 @@ export function useEditorViewModel() {
       const styles = styleSchema.parse(result.settings);
       savedSettings.current = JSON.stringify(styles);
       setHistory(current => ({ past: [], present: { ...current.present, styles }, future: [] }));
-      setSettingsNotice(result.error ?? '配置已保存'); setSettingsReady(true);
-    }).catch(reason => { if (!cancelled) { setError(`配置读取失败：${String(reason)}。请刷新重试。`); setSettingsNotice('配置未读取'); } });
+      if (result.error) showWarning(result.error); setSettingsReady(true);
+    }).catch(reason => { if (!cancelled) { reportError('settings-load', `配置读取失败：${String(reason)}。请刷新重试。`); } });
     return () => { cancelled = true; };
   }, []);
   useEffect(() => {
     if (!settingsReady) return;
     const revision = ++settingsRevision.current;
     const parsed = styleSchema.safeParse(project.styles);
-    if (!parsed.success) { setSettingsNotice(`配置无效，未保存：${parsed.error.issues.map(issue => issue.message).join(' ')}`); return; }
+    if (!parsed.success) { reportError('settings-validation', `配置无效，未保存：${parsed.error.issues.map(issue => issue.message).join(' ')}`); return; }
+    reportError('settings-validation', '');
     const serialized = JSON.stringify(parsed.data);
     if (serialized === savedSettings.current && pendingSettingsSaves.current === 0) {
-      setSettingsNotice(current => current === '配置未保存' ? '配置已保存' : current);
+      reportError('settings-save', '');
       return;
     }
-    setSettingsNotice('配置未保存');
     const timer = setTimeout(() => {
       pendingSettingsSaves.current++;
       settingsQueue.current = settingsQueue.current.then(async () => {
         try {
           if (revision !== settingsRevision.current) return;
           await saveSettings(parsed.data); savedSettings.current = serialized;
-          if (revision === settingsRevision.current) setSettingsNotice('配置已保存');
-        } catch (reason) { if (revision === settingsRevision.current) setSettingsNotice(`配置未保存：${String(reason)}`); }
+          if (revision === settingsRevision.current) reportError('settings-save', '');
+        } catch (reason) { if (revision === settingsRevision.current) reportError('settings-save', `配置未保存：${String(reason)}`); }
         finally { pendingSettingsSaves.current--; }
       });
     }, 300);
@@ -80,11 +94,11 @@ export function useEditorViewModel() {
   }, [project.styles, settingsReady]);
 
   useEffect(() => {
-    if (boot.cacheBlocked) { setCacheStatus('自动缓存已停用，旧草稿未覆盖，请保存 JSON。'); return; }
+    if (boot.cacheBlocked) { reportError('draft', '自动缓存已停用，旧草稿未覆盖，请保存 JSON。'); return; }
     try {
       cacheDraft(project);
-      setCacheStatus(`自动草稿 ${new Date().toLocaleTimeString()}`);
-    } catch { setCacheStatus('自动草稿保存失败！请立即下载 JSON 备份。'); }
+      reportError('draft', '');
+    } catch { reportError('draft', '自动草稿保存失败！请立即下载 JSON 备份。'); }
   }, [project]);
   useEffect(() => {
     if (!settingsReady) return;
@@ -96,11 +110,9 @@ export function useEditorViewModel() {
         if (cancelled) return;
         setRendered({ project, layout });
         window.editor = { project, signature: layout.signature, diagnostics: layout.diagnostics };
-        if (highlightRefresh !== lastHighlightRefresh.current) {
-          lastHighlightRefresh.current = highlightRefresh;
-          setNotice(`已刷新高亮：命中 ${collectHighlights(project).length} 处。${layout.warnings.length ? ` ${layout.warnings.join(' ')}` : ''}`);
-        } else if (layout.warnings.length) setNotice(layout.warnings.join(' '));
-      }).catch(reason => { if (!cancelled) setError(`分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
+        reportError('pagination', '');
+        if (layout.warnings.length) showWarning(layout.warnings.join(' '));
+      }).catch(reason => { if (!cancelled) reportError('pagination', `分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
     }, 120);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [project, highlightRefresh, settingsReady]);
@@ -117,25 +129,25 @@ export function useEditorViewModel() {
     try {
       const next = await readProject(file);
       if (request !== openRequest.current) return;
-      update(next); setLastFile(stringify(next)); setError(''); setNotice(`已打开 ${file.name}；旧项目可通过撤销恢复。`);
-    } catch (reason) { if (request === openRequest.current) setError(`无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
+      update(next); setLastFile(stringify(next)); reportError('import', '');
+    } catch (reason) { if (request === openRequest.current) reportError('import', `无法打开项目：${reason instanceof Error ? reason.message : String(reason)}`); }
     finally { if (request === openRequest.current) setOpening(false); }
   }
   function save() {
     try {
       const contents = stringify(parseProject(projectDocument(project)));
       download(new Blob([contents], { type: 'application/json' }), 'reading-project.json');
-      setLastFile(contents); setNotice('已发起 JSON 下载，请在浏览器下载列表确认文件已落盘。');
-    } catch (reason) { setError(`项目保存失败：${String(reason)}`); }
+      setLastFile(contents); reportError('save', '');
+    } catch (reason) { reportError('save', `项目保存失败：${String(reason)}`); }
   }
   async function exportImages(page?: number) {
     if (!ready || exporting) return;
-    setExporting(true); setError('');
+    setExporting(true);
     try {
       const image = await requestExport(project, rendered.layout.signature, page, rendered.layout.diagnostics);
       download(image, page ? `page-${String(page).padStart(2, '0')}.png` : 'reading-cards.zip');
-      setNotice('导出完成，已发起下载。图片对应点击导出时的项目快照。');
-    } catch (reason) { setError(`导出失败：${reason instanceof Error ? reason.message : String(reason)}`); }
+      reportError('export', '');
+    } catch (reason) { reportError('export', `导出失败：${reason instanceof Error ? reason.message : String(reason)}`); }
     finally { setExporting(false); }
   }
   function setProjectText(key: 'title' | 'mainIdea' | 'personalizedHeader', value: string) {
@@ -151,16 +163,14 @@ export function useEditorViewModel() {
     update(current => ({ ...current, [key]: { paragraphs: current[key].paragraphs.filter(item => item.id !== id) } }));
   }
   function highlightRange(paragraphId: string, start: number, end: number) {
-    if (start === end) { setNotice('请先在英文段落中选择要标注的文字。'); return; }
+    if (start === end) { showWarning('请先在英文段落中选择要标注的文字。'); return; }
     const next = toggleHighlight(project, paragraphId, start, end);
-    if (next === project) { setNotice('请选择完整的单词或词组。'); return; }
+    if (next === project) { showWarning('请选择完整的单词或词组。'); return; }
     update(next);
   }
   function refreshHighlights() {
     setRendered(null);
     setHighlightRefresh(current => current + 1);
-    setError('');
-    setNotice('正在刷新高亮…');
   }
   function setPageBreak(id: string, checked: boolean) {
     update(current => ({ ...current, layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: checked ? [...current.layoutOverrides.manualPageBreaks, id] : current.layoutOverrides.manualPageBreaks.filter(item => item !== id) } }));
@@ -175,7 +185,8 @@ export function useEditorViewModel() {
     try {
       const next = commitEntryHead(project, key, id, value);
       if (next !== project) update(next);
-    } catch (reason) { setError(`词条保存失败：${String(reason)}`); }
+      reportError('entry', '');
+    } catch (reason) { reportError('entry', `词条保存失败：${String(reason)}`); }
   }
   function setSenseField(key: EntryCollection, id: string, index: number, field: keyof Sense, value: string) {
     update(current => ({ ...current, [key]: current[key].map(entry => entry.id === id ? { ...entry, senses: entry.senses.map((sense, i) => i === index ? { ...sense, [field]: value } : sense) } : entry) }));
@@ -222,19 +233,18 @@ export function useEditorViewModel() {
     update(current => ({ ...current, styles: { ...current.styles, [key]: value } }));
   }
   function resetStyles() { savedSettings.current = ''; update(current => ({ ...current, styles: { ...defaults } })); }
-  function clearWarnings() { update(current => ({ ...current, warnings: [] })); }
-  function clearError() { setError(''); }
+  function clearError() { const source = Object.keys(errors)[0]; if (source) reportError(source, ''); }
   function downloadRejectedDraft() {
     if (boot.rejected) download(new Blob([boot.rejected], { type: 'text/plain' }), 'rejected-draft.txt');
   }
 
   return {
-    project, notice, error, cacheStatus, settingsNotice, settingsReady, ready, exporting, hasFileChanges,
+    project, warning, error, settingsReady, ready, exporting, hasFileChanges,
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
     highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
-    clearWarnings, clearError, downloadRejectedDraft,
+    clearError, downloadRejectedDraft,
   };
 }

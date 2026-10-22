@@ -19,7 +19,8 @@ test('export diagnoses project and line differences without misleading installat
   const alert = page.getByRole('alert');
   await expect(alert).toContainText('行高');
   await expect(alert).not.toContainText('请确认 Chromium 已安装');
-  await expect(alert).not.toContainText('Error:');
+  await expect(alert).toContainText('Error: 导出失败');
+  await expect(alert).not.toContainText('Error: Error:');
 });
 
 for (const scale of [1, 1.25, 1.5, 2]) test(`installed Chrome at ${scale * 100}% device scale exports through bundled Chromium`, async ({ baseURL }) => {

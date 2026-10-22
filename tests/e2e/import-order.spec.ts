@@ -19,11 +19,11 @@ for (const staleFails of [false, true]) test(`the latest file wins when an older
   await page.evaluate(() => (window as unknown as { releaseRead: (name: string) => void }).releaseRead('latest.json'));
   await expect(page.getByLabel('英文标题', { exact: true })).toHaveValue('Latest project');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
-  const latestNotice = await page.getByRole('status').textContent();
+  const latestNotice = await page.getByLabel('信息提示栏').textContent();
   await page.evaluate(() => (window as unknown as { releaseRead: (name: string) => void }).releaseRead('older.json'));
   // File.text's continuation and React's state flush must finish before observing stale results.
   await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   await expect(page.getByLabel('英文标题', { exact: true })).toHaveValue('Latest project');
   await expect(page.getByRole('alert')).toHaveCount(0);
-  await expect(page.getByRole('status')).toHaveText(latestNotice!);
+  await expect(page.getByLabel('信息提示栏')).toHaveText(latestNotice!);
 });

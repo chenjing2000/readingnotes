@@ -136,13 +136,11 @@ export function measureLines(project: Project, block: Block, width: number, host
   }
   if (farthestRight > fitWidth + .1) {
     if (width <= widestGlyph + 1) throw new Error(`内容 ${block.id} 的单个字形无法放入当前栏宽，请减小字号或边距。`);
-    host.dataset.adjustedWrap = 'true';
     return measureLines(project, block, width - Math.ceil(widestGlyph), host, fitWidth, highlights);
   }
   // Range heights round to device pixels at different display scales. Canvas font metrics
   // stay in CSS pixels; allow one pixel per edge for raster rounding without changing pagination by DPI.
   const safeHeight = Math.max(height, Math.ceil(glyphHeight) + 2);
-  if (safeHeight > height + .1) host.dataset.adjustedLineHeight = 'true';
   return lines.map(line => ({ ...line, height: safeHeight }));
 }
 
@@ -288,8 +286,6 @@ export async function paginate(project: Project): Promise<Layout> {
       if (cursor !== source.original.length) throw new Error(`分页内容缺失：${id}`);
     }
     pages.forEach((page, index) => { page.querySelector('.footer')!.lastElementChild!.textContent = `${String(index + 1).padStart(2, '0')} / ${String(pages.length).padStart(2, '0')}`; });
-    if (host.dataset.adjustedLineHeight) warnings.push('部分行距小于字体字形包围框，已增加实际行高以避免裁切。');
-    if (host.dataset.adjustedWrap) warnings.push('部分标点会悬挂出文本框，已缩小实际换行宽度，确保文字完整可见。');
     const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify([project, records])));
     const signature = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
     const projectDigest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(project)));

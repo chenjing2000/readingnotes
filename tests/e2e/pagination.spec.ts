@@ -96,7 +96,7 @@ test('draft survives a real Chromium process restart', async () => {
     page = await context.newPage();
     await page.goto(test.info().project.use.baseURL!);
     await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue('Preserved across a browser restart.');
-    await expect(page.getByRole('status')).toContainText('已恢复本机自动草稿');
+    await expect(page.getByLabel('信息提示栏')).toHaveText('');
   } finally { await context.close(); }
 });
 
@@ -105,9 +105,9 @@ test('local resources and failed draft storage are visible', async ({ page }) =>
   await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new Error('quota'); }; });
   await page.goto('/');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
-  await expect(page.getByText('自动草稿保存失败！请立即下载 JSON 备份。')).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText('自动草稿保存失败！请立即下载 JSON 备份。');
   await page.getByRole('button', { name: '保存 JSON', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('已发起 JSON 下载');
+  await expect(page.getByRole('alert')).toContainText('自动草稿保存失败');
 });
 
 test('corrupt drafts stay recoverable and narrow preview footer matches export styling', async ({ page }) => {

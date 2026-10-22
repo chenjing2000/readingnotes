@@ -20,8 +20,8 @@ test('shared settings persist independently of articles and determine exact expo
   for (const [label, value] of [['页面宽度', '1000'], ['页面高度', '1400'], ['主要内容字号', '38'], ['中文译文字号', '28'], ['页眉字号', '20'], ['页脚字号', '18']]) {
     await page.getByLabel(label, { exact: true }).fill(value);
   }
-  await expect(page.getByText('配置已保存', { exact: true })).toBeVisible();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
+  await expect.poll(async () => (await (await request.get('/api/settings')).json()).settings).toEqual(await page.evaluate(() => window.editor.project.styles));
   const stored = await (await request.get('/api/settings')).json();
   expect(stored.settings).toMatchObject({ pageWidth: 1000, pageHeight: 1400, mainIdeaSize: 38, translationSize: 28 });
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'another.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ ...fixture, title: 'Another article' })) });
@@ -47,7 +47,7 @@ test('shared settings persist independently of articles and determine exact expo
   await expect(page.getByRole('button', { name: '导出全部 PNG / ZIP', exact: true })).toBeDisabled();
   expect((await (await request.get('/api/settings')).json()).settings.pageWidth).toBe(1000);
   await page.getByRole('button', { name: '恢复模板默认', exact: true }).click();
-  await expect(page.getByText('配置已保存', { exact: true })).toBeVisible();
+  await expect.poll(async () => (await (await request.get('/api/settings')).json()).settings).toEqual(defaults);
   expect((await (await request.get('/api/settings')).json()).settings).toEqual(defaults);
 });
 
@@ -75,7 +75,7 @@ test('missing settings are rebuilt and damaged settings require an explicit rese
   await expect(page.getByText(/配置无法读取，暂用默认值/)).toBeVisible();
   expect(await readFile(path, 'utf8')).toBe('{broken');
   await page.getByRole('button', { name: '恢复模板默认', exact: true }).click();
-  await expect(page.getByText('配置已保存', { exact: true })).toBeVisible();
+  await expect.poll(async () => (await (await request.get('/api/settings')).json())).toEqual({ settings: defaults });
   expect(JSON.parse(await readFile(path, 'utf8'))).toEqual(defaults);
 });
 
@@ -100,7 +100,8 @@ test('undo during an in-flight settings save persists the latest visible setting
   expect(await page.evaluate(() => {
     const event = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(event); return event.defaultPrevented;
   })).toBe(true);
-  release();
-  await expect(page.getByText('配置已保存', { exact: true })).toBeVisible();
+  const corrected = page.waitForResponse(response => response.url().endsWith('/api/settings') && response.request().method() === 'PUT'
+    && JSON.parse(response.request().postData()!).bodySize === 34 && response.ok());
+  release(); await corrected;
   expect((await (await request.get('/api/settings')).json()).settings.bodySize).toBe(34);
 });
