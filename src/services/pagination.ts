@@ -32,7 +32,7 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
     case 'example': fontSize = 34; lineHeight = 1.43; break;
     case 'exampleTranslation': fontSize = 31; lineHeight = 1.45; color = '#555'; break;
     case 'translation': fontSize = styles.translationSize; lineHeight = styles.translationLineHeight; break;
-    case 'mainIdea': fontSize = 36; lineHeight = 1.54; break;
+    case 'mainIdea': fontSize = styles.translationSize; lineHeight = 1.54; break;
   }
   return { fontSize: `${fontSize}px`, lineHeight: String(lineHeight), fontWeight, color, fontFamily: FONT, letterSpacing: block.kind === 'article' ? '-0.2px' : 'normal' };
 }

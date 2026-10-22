@@ -115,7 +115,6 @@ export default function EditorView() {
       </div><div className="notice" role="status">{notice}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
     </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>1200 × 1600 px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
       <div className="preview-scroll"><div className="preview" style={{ '--zoom': zoom } as React.CSSProperties} data-ready={ready} ref={preview} onClick={jump} />
-        {ready && <div className="page-downloads">{Array.from({ length: pages }, (_, index) => <button key={index} disabled={exporting} onClick={() => void vm.exportImages(index + 1)}>第 {index + 1} 页 PNG</button>)}</div>}
       </div>
     </section>} />
   </div>;
