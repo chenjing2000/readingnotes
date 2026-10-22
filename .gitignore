@@ -44,3 +44,8 @@ Desktop.ini
 *~
 
 # Keep artifacts/demo/, artifacts/verification/, assets/ and package-lock.json tracked.
+
+# Local shared editor preferences and isolated test settings
+/config/settings.json
+/config/*.tmp
+/artifacts/test-runtime/

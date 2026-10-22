@@ -1,18 +1,8 @@
 import { z } from 'zod';
 
-const size = z.number().finite().min(12).max(80);
-export const styleSchema = z.object({
-  titleSize: size.default(40), bodySize: size.default(36), phraseSize: size.default(36),
-  translationSize: size.default(32), lineHeight: z.number().min(1.2).max(2.4).default(1.45),
-  translationLineHeight: z.number().min(1.2).max(2.4).default(1.62),
-  paragraphGap: z.number().min(0).max(100).default(18),
-  marginX: z.number().min(24).max(200).default(54),
-  marginTop: z.number().min(24).max(200).default(34),
-  marginBottom: z.number().min(65).max(400).default(80),
-  accent: z.string().regex(/^#[\da-fA-F]{6}$/).default('#b81a35'),
-  divider: z.string().regex(/^#[\da-fA-F]{6}$/).default('#007175'),
-});
-export const defaults = styleSchema.parse({});
+import { defaults, settingsSchema, type Styles } from './settings';
+export { defaults, settingsSchema as styleSchema, type Styles } from './settings';
+
 const id = z.string().min(1).max(200);
 // A layout key contains a kind and an ID; JSON escaping can expand each ID character to six characters.
 const pageBreakKey = z.string().min(1).max(2048).refine(value => {
@@ -37,9 +27,14 @@ const common = {
   theme: z.literal('classic').default('classic'),
   layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
 };
-const currentSchema = z.object({ ...common, schemaVersion: z.literal(3), styles: styleSchema.default(defaults), warnings: z.array(z.string()).default([]) }).strict();
+const currentSchema = z.object({ ...common, schemaVersion: z.literal(4), warnings: z.array(z.string()).default([]) }).strict();
 export type Project = z.infer<typeof currentSchema>;
-export type Styles = Project['styles'];
+export type RenderProject = Project & { styles: Styles };
+export function projectDocument(input: RenderProject): Project { const { styles: _settings, ...document } = input; return document; }
+export function parseRenderProject(input: unknown): RenderProject {
+  const { styles, ...document } = input as Record<string, unknown>;
+  return { ...parseProject(document), styles: settingsSchema.parse(styles ?? defaults) };
+}
 export type EntryCollection = 'vocabulary' | 'expressions';
 export type Sense = Project['vocabulary'][number]['senses'][number];
 export function splitSenseMeaning(value: string, previousPos = ''): Pick<Sense, 'pos' | 'meaning'> {
@@ -52,8 +47,8 @@ export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
 
 export function parseProject(input: unknown): Project {
-  if (input && typeof input === 'object' && 'schemaVersion' in input && input.schemaVersion !== 3) {
-    throw new Error('仅支持 schemaVersion: 3，旧格式不再支持，请按当前 skill 重新生成 JSON。');
+  if (input && typeof input === 'object' && 'schemaVersion' in input && input.schemaVersion !== 4) {
+    throw new Error('仅支持 schemaVersion: 4，旧格式不再支持，请按当前 skill 重新生成 JSON。');
   }
   const project = currentSchema.parse(input);
   const ids = [project.id, ...project.source.paragraphs.map(item => item.id), ...project.translation.paragraphs.map(item => item.id), ...project.vocabulary.map(item => item.id), ...project.expressions.map(item => item.id)];

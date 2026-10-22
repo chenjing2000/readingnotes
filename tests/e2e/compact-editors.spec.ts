@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
 test('each vocabulary sense has one combined editor stacked below the previous sense', async ({ page }) => {
@@ -9,8 +9,8 @@ test('each vocabulary sense has one combined editor stacked below the previous s
   ] }] };
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'combined.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(input)) });
   await page.getByRole('button', { name: '词汇', exact: true }).click();
-  const cell = page.getByRole('table', { name: '词汇表' }).locator('tbody tr').first().locator('td').nth(2);
-  await expect(cell.locator('input')).toHaveCount(2);
+  const cell = page.getByRole('table', { name: '词汇 1', exact: true });
+  await expect(cell.locator('textarea[aria-label^="含义"]')).toHaveCount(2);
   const first = page.getByLabel('含义 1', { exact: true });
   const second = page.getByLabel('含义 1 义项 2', { exact: true });
   await expect(first).toHaveValue('v. 恶化；变的不友好');
@@ -20,7 +20,7 @@ test('each vocabulary sense has one combined editor stacked below the previous s
   await first.press('Tab');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   expect((await page.evaluate(() => window.editor.project)).vocabulary[0].senses[0]).toMatchObject({ pos: 'n.', meaning: '酸味' });
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(first).toHaveValue('v. 恶化；变的不友好');
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();

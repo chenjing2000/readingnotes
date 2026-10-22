@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { unzipSync } from 'fflate';
 
@@ -38,9 +38,9 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue(fixture.source.paragraphs[1].text);
   const changed = fixture.source.paragraphs[1].text.replace('supposedly', 'reportedly and supposedly');
   await page.getByLabel('英文段落 2', { exact: true }).fill(changed); await ready(page);
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue(fixture.source.paragraphs[1].text);
-  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue(changed);
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await page.getByLabel('词头 1', { exact: true }).fill('edited word');

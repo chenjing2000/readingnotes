@@ -14,15 +14,15 @@ describe('project persistence and entry highlights', () => {
   });
   it('preserves both independent content snapshots', () => {
     const project = parseProject(fixture);
-    expect(project.schemaVersion).toBe(3);
+    expect(project.schemaVersion).toBe(4);
     for (const [key, filename] of [['source', 'article'], ['translation', 'translation']] as const) {
       const snapshot = readFileSync(`assets/projects/brainco/${filename}.md`, 'utf8').replace(/\r\n/g, '\n').trim();
       expect(project[key].paragraphs.map(item => item.text).join('\n\n')).toBe(snapshot);
       expect(project[key].paragraphs).toHaveLength(2);
     }
     expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
-    expect(project.styles.bodySize).toBe(36);
-    expect(project.styles.translationSize).toBe(32);
+    expect(defaults.bodySize).toBe(34);
+    expect(defaults.translationSize).toBe(32);
   });
   it('rejects bad versions, fields, IDs, ranges and unsafe styles', () => {
     expect(() => parseProject({ ...fixture, schemaVersion: 99 })).toThrow();

@@ -7,20 +7,20 @@ import '@fontsource/noto-sans-sc/700.css';
 import './views/editor.css';
 import EditorView from './views/EditorView';
 import { paginate } from './services/pagination';
-import { parseProject, type Project } from './models/project';
+import { parseRenderProject, type RenderProject } from './models/project';
 import type { LayoutDiagnostics } from './services/layoutVerification';
 
 declare global {
   interface Window {
     renderProject: (project: unknown) => Promise<string>;
-    editor: { project: Project; signature: string; diagnostics: LayoutDiagnostics };
+    editor: { project: RenderProject; signature: string; diagnostics: LayoutDiagnostics };
     renderDiagnostics?: LayoutDiagnostics;
   }
 }
 if (location.pathname === '/render') {
   document.body.className = 'export-mode';
   window.renderProject = async input => {
-    const result = await paginate(parseProject(input));
+    const result = await paginate(parseRenderProject(input));
     document.getElementById('root')!.replaceChildren(...result.pages);
     window.renderDiagnostics = result.diagnostics;
     return result.signature;

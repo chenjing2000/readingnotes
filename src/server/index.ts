@@ -3,7 +3,8 @@ import { chromium } from '@playwright/test';
 import { zipSync, strToU8 } from 'fflate';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseProject } from '../models/project';
+import { parseRenderProject, projectDocument } from '../models/project';
+import { SettingsStore } from './settingsStore';
 import { describeLayoutMismatch, type LayoutDiagnostics } from '../services/layoutVerification';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -12,6 +13,14 @@ const port = Number(process.env.PORT ?? 4317);
 const baseURL = `http://127.0.0.1:${port}`;
 let busy = false;
 app.use(express.json({ limit: '5mb' }));
+const settingsStore = new SettingsStore(process.env.SETTINGS_PATH ?? resolve(root, 'config/settings.json'));
+const initialSettings = await settingsStore.load();
+if (initialSettings.error) console.warn(initialSettings.error);
+app.get('/api/settings', async (_request, response) => { response.json(await settingsStore.load()); });
+app.put('/api/settings', async (request, response) => {
+  if (request.headers.origin && request.headers.origin !== baseURL) { response.status(403).send('只允许本机编辑器修改配置。'); return; }
+  response.json(await settingsStore.save(request.body));
+});
 app.post('/api/export', async (request, response) => {
   if (request.headers.origin && request.headers.origin !== baseURL) { response.status(403).send('只允许本机编辑器发起导出。'); return; }
   if (busy) { response.status(409).send('正在导出另一个项目，请稍后重试。'); return; }
@@ -21,7 +30,7 @@ app.post('/api/export', async (request, response) => {
   let contentType = 'application/zip';
   let failure = '';
   try {
-    const project = parseProject(request.body.project);
+    const project = parseRenderProject(request.body.project);
     try { browser = await chromium.launch(); }
     catch (reason) {
       const message = reason instanceof Error ? reason.message : String(reason);
@@ -48,7 +57,7 @@ app.post('/api/export', async (request, response) => {
       if (requested !== undefined) { single = png; break; }
       files[`page-${String(index + 1).padStart(2, '0')}.png`] = png;
     }
-    files['project.json'] = strToU8(JSON.stringify(project, null, 2));
+    files['project.json'] = strToU8(JSON.stringify(projectDocument(project), null, 2));
     result = single ?? Buffer.from(zipSync(files));
     contentType = single ? 'png' : 'application/zip';
   } catch (reason) {

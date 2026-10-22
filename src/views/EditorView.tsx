@@ -10,7 +10,7 @@ type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
 export default function EditorView() {
   const vm = useEditorViewModel();
-  const { project, notice, error, cacheStatus, ready, exporting, pages, layout, hasFileChanges, canUndo, canRedo, rejectedDraft } = vm;
+  const { project, notice, error, cacheStatus, settingsNotice, settingsReady, ready, exporting, pages, layout, hasFileChanges, canUndo, canRedo, rejectedDraft } = vm;
   const [tab, setTab] = useState<Tab>('原文');
   const [zoom, setZoom] = useState(0.46);
   const preview = useRef<HTMLDivElement>(null);
@@ -21,7 +21,7 @@ export default function EditorView() {
   const [focusId, setFocusId] = useState('');
   useLayoutEffect(() => {
     if (!layout) return;
-    const wrappers = layout.pages.map(card => { const wrapper = document.createElement('div'); wrapper.className = 'card-wrapper'; wrapper.append(card); return wrapper; });
+    const wrappers = layout.pages.map(card => { const wrapper = document.createElement('div'); wrapper.className = 'card-wrapper'; wrapper.style.setProperty('--page-width', card.style.width); wrapper.style.setProperty('--page-height', card.style.height); wrapper.append(card); return wrapper; });
     preview.current!.replaceChildren(...wrappers);
   }, [layout]);
   useEffect(() => {
@@ -69,10 +69,23 @@ export default function EditorView() {
       {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
-  const styleFields: [keyof Styles, string, number, number, number][] = [
-    ['titleSize', '标题字号', 12, 80, 1], ['bodySize', '英文正文字号', 12, 80, 1], ['phraseSize', '表达短语字号', 12, 80, 1], ['translationSize', '中文译文字号', 12, 80, 1],
-    ['lineHeight', '英文行距', 1.2, 2.4, 0.05], ['translationLineHeight', '中文行距', 1.2, 2.4, 0.02], ['paragraphGap', '段距', 0, 100, 1], ['marginX', '左右边距', 24, 200, 1], ['marginTop', '上边距', 24, 200, 1], ['marginBottom', '底部预留', 65, 400, 1],
+  const fontFields: [keyof Styles, string, number, number, number][] = [
+    ['titleSize', '标题字号', 12, 80, 1], ['bodySize', '英文正文字号', 12, 80, 1], ['mainIdeaSize', '主要内容字号', 12, 80, 1], ['translationSize', '中文译文字号', 12, 80, 1],
+    ['headerSize', '页眉字号', 12, 80, 1], ['footerSize', '页脚字号', 12, 80, 1], ['wordSize', '词汇单词字号', 12, 80, 1], ['vocabularySize', '词汇其余内容字号', 12, 80, 1],
+    ['phraseSize', '表达短语字号', 12, 80, 1], ['expressionSize', '表达其余内容字号', 12, 80, 1], ['headingSize', '栏目标题字号', 12, 80, 1],
   ];
+  const otherFields: typeof fontFields = [
+    ['pageWidth', '页面宽度', 400, 4000, 1], ['pageHeight', '页面高度', 400, 4000, 1],
+    ['lineHeight', '英文行距', 1.2, 2.4, 0.05], ['translationLineHeight', '中文行距', 1.2, 2.4, 0.02], ['paragraphGap', '段距', 0, 100, 1],
+    ['marginX', '左右边距', 24, 200, 1], ['marginTop', '上边距', 24, 200, 1], ['marginBottom', '底部预留', 65, 400, 1],
+  ];
+  function settingsTable(name: string, fields: typeof fontFields) {
+    return <><h2 className="settings-heading">{name}</h2><table className="settings-table" aria-label={name}><thead><tr><th>参数</th><th>数值</th></tr></thead><tbody>
+      {fields.map(([key, label, min, max, step]) => <tr key={key}><th scope="row"><label htmlFor={`setting-${key}`}>{label}</label></th><td>
+        <input id={`setting-${key}`} type="number" min={min} max={max} step={step} value={project.styles[key]} onChange={event => vm.setStyle(key, event.target.value === '' ? 0 : Number(event.target.value))} />
+      </td></tr>)}
+    </tbody></table></>;
+  }
   return <div className="app-shell">
     <header className="app-header"><div className="brand-mark">Aa<span>READING STUDIO</span></div><span className="local-badge">本地 · 离线 · 私有</span><span className="spacer" />
       <label className="button">打开 JSON<input type="file" accept=".json,application/json" aria-label="打开项目 JSON" onChange={event => { void vm.open(event.target.files?.[0]); event.target.value = ''; }} /></label>
@@ -82,8 +95,8 @@ export default function EditorView() {
     {error && <div className="error-banner" role="alert">{error}<button onClick={vm.clearError}>关闭</button></div>}
     <SplitPane left={<aside className="editor-panel" id="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
       <nav aria-label="编辑板块">{(['原文', '词汇', '表达', '主旨与译文', '样式'] as Tab[]).map(name => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>)}</nav>
-      <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>撤销</button><button onClick={vm.redo} disabled={!canRedo}>重做</button><span>支持最近 100 次修改</span></div>
-      <div className={`fields${tab === '词汇' ? ' vocabulary-fields' : ''}`}>
+      <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>Undo</button><button onClick={vm.redo} disabled={!canRedo}>Redo</button><span>支持最近 10 次修改</span></div>
+      <div inert={!settingsReady} className="fields">
         {tab === '原文' && <>
           <label className="field"><span>个性化页眉</span><input type="text" aria-label="个性化页眉" value={project.personalizedHeader} onChange={event => vm.setProjectText('personalizedHeader', event.target.value)} /></label>
           {field('英文标题', project.title, value => vm.setProjectText('title', value), 'project:title')}
@@ -107,13 +120,12 @@ export default function EditorView() {
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('translation')}>添加中文段落</button>
         </>}
-        {tab === '样式' && <><p className="hint">画布固定 1200 × 1600。数值在允许范围内时立即应用；默认使用本地打包字体。</p><div className="style-grid">
-          {styleFields.map(([key, label, min, max, step]) => <label className="field" key={key}><span>{label}</span><input type="number" aria-label={label} min={min} max={max} step={step} value={project.styles[key]} onChange={event => { const value = Number(event.target.value); if (value >= min && value <= max) vm.setStyle(key, value); }} /></label>)}
-          {([['accent', '强调色'], ['divider', '分割线颜色']] as const).map(([key, label]) => <label className="field" key={key}><span>{label}</span><input type="color" aria-label={label} value={project.styles[key]} onChange={event => vm.setStyle(key, event.target.value)} /></label>)}
-        </div><button className="add-button" onClick={vm.resetStyles}>恢复模板默认</button></>}
+        {tab === '样式' && <><p className="hint">字号与页面尺寸单位为 px；修改有效配置后自动保存到 config/settings.json。</p>
+          <p role="status" className="hint">{settingsNotice}</p>{settingsTable('字号设置', fontFields)}{settingsTable('其余设置', otherFields)}
+          <button className="add-button" onClick={vm.resetStyles}>恢复模板默认</button></>}
         {!!project.warnings.length && <div className="warning-list">{project.warnings.map((warning, index) => <p key={index}>{warning}</p>)}<button onClick={vm.clearWarnings}>已阅读提示</button></div>}
       </div><div className="notice" role="status">{notice}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
-    </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>1200 × 1600 px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
+    </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>{project.styles.pageWidth} × {project.styles.pageHeight} px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
       <div className="preview-scroll"><div className="preview" style={{ '--zoom': zoom } as React.CSSProperties} data-ready={ready} ref={preview} onClick={jump} />
       </div>
     </section>} />

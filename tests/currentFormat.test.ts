@@ -2,9 +2,9 @@ import { expect, it } from 'vitest';
 import fixture from '../assets/projects/brainco/project.json';
 import { parseProject } from '../src/models/project';
 
-it('accepts only schema 3 without migrating old files', () => {
-  expect(parseProject(fixture).schemaVersion).toBe(3);
-  for (const schemaVersion of [1, 2, 99]) expect(() => parseProject({ ...fixture, schemaVersion })).toThrow(/schemaVersion.*3/);
+it('accepts only schema 4 without migrating old files', () => {
+  expect(parseProject(fixture).schemaVersion).toBe(4);
+  for (const schemaVersion of [1, 2, 3, 99]) expect(() => parseProject({ ...fixture, schemaVersion })).toThrow(/schemaVersion.*4/);
 });
 
 it('rejects old highlight tables and scalar entry fields instead of discarding them', () => {

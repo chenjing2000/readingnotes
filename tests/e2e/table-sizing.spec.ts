@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('vocabulary cells are single-line editors with centered content', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
-  const table = page.getByRole('table', { name: '词汇表' });
-  await expect(table.locator('textarea')).toHaveCount(0);
+  const table = page.getByRole('table', { name: '词汇 1', exact: true });
+  await expect(table.locator('textarea')).toHaveCount(3);
   const word = page.getByLabel('词头 1', { exact: true });
   await expect(word).toHaveJSProperty('tagName', 'INPUT');
   await expect(word).toHaveCSS('resize', 'none');
@@ -13,7 +13,7 @@ test('vocabulary cells are single-line editors with centered content', async ({ 
   expect((await word.boundingBox())!.height).toBeCloseTo(height, 0);
   expect(await table.locator('th,td').evaluateAll(cells => cells.every(cell => getComputedStyle(cell).verticalAlign === 'middle'))).toBe(true);
   expect(await table.locator('td').evaluateAll(cells => cells.every(cell => {
-    const editor = cell.querySelector('input')!, a = cell.getBoundingClientRect(), b = editor.getBoundingClientRect();
+    const editor = cell.querySelector('input,textarea,button')!, a = cell.getBoundingClientRect(), b = editor.getBoundingClientRect();
     return Math.abs((a.top + a.bottom - b.top - b.bottom) / 2) < 1;
   }))).toBe(true);
   await page.screenshot({ path: 'artifacts/test-results/compact-vocabulary.png' });
@@ -37,9 +37,9 @@ test('expression editors fit initial content, editing, undo and changed column w
   expect(await example.evaluate(node => node.clientHeight >= node.scrollHeight - 1)).toBe(true);
   await example.fill('Short.');
   await expect.poll(async () => (await example.boundingBox())!.height).toBeCloseTo(shortHeight, 0);
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect.poll(async () => (await example.boundingBox())!.height).toBeGreaterThan(shortHeight + 80);
-  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect.poll(async () => (await example.boundingBox())!.height).toBeCloseTo(shortHeight, 0);
   await example.fill('A wrapping example with several words. '.repeat(15));
   const narrowHeight = (await example.boundingBox())!.height;

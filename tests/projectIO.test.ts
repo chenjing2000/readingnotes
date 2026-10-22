@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 import fixture from '../assets/projects/brainco/project.json';
-import { layoutKey, parseProject } from '../src/models/project';
+import { layoutKey, parseRenderProject } from '../src/models/project';
 import { requestExport, restoreDraft } from '../src/services/projectIO';
 import type { LayoutDiagnostics } from '../src/services/layoutVerification';
 
@@ -10,7 +10,7 @@ it('rejects an old-format draft while preserving its original bytes in quarantin
   vi.stubGlobal('localStorage', { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => store.set(key, value) });
   try {
     const restored = restoreDraft();
-    expect(restored.project.schemaVersion).toBe(3);
+    expect(restored.project.schemaVersion).toBe(4);
     expect(restored.rejected).toBe(raw);
     expect(restored.notice).toContain('格式不受支持');
     expect(store.get('reading-editor.rejected-draft')).toBe(raw);
@@ -19,7 +19,7 @@ it('rejects an old-format draft while preserving its original bytes in quarantin
 });
 
 it('keeps large line diagnostics within the existing export request budget', async () => {
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   const diagnostics: LayoutDiagnostics = { projectSignature: 'a'.repeat(64), pages: 100, records: Array.from({ length: 4000 }, (_, index) => [1, layoutKey('article', '\u0001'.repeat(200)), index, index + 1, 0, 40, 1092, false]) };
   const fetchMock = vi.fn(async () => new Response('image'));
   vi.stubGlobal('fetch', fetchMock);
@@ -33,12 +33,12 @@ it('keeps large line diagnostics within the existing export request budget', asy
 });
 
 it('does not let summary diagnostics push an otherwise valid request over the limit', async () => {
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   project.source.paragraphs = Array.from({ length: 18 }, (_, index) => ({ id: `boundary-${index}`, text: index < 17 ? 'a'.repeat(300000) : '' }));
   const limit = 5 * 1024 * 1024;
   const overhead = new Blob([JSON.stringify({ project, signature: 'signature' })]).size;
   project.source.paragraphs[17].text = 'b'.repeat(limit - overhead);
-  expect(() => parseProject(project)).not.toThrow();
+  expect(() => parseRenderProject(project)).not.toThrow();
   const diagnostics: LayoutDiagnostics = { projectSignature: 'a'.repeat(64), pages: 100, records: [] };
   const fetchMock = vi.fn(async () => new Response('image')); vi.stubGlobal('fetch', fetchMock);
   try {

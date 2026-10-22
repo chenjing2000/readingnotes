@@ -1,3 +1,5 @@
+import { defaults } from '../src/models/settings';
+import { SettingsStore } from '../src/server/settingsStore';
 import { chromium } from '@playwright/test';
 import { unzipSync } from 'fflate';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -10,7 +12,9 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const output = resolve(root, 'artifacts/demo');
 await mkdir(output, { recursive: true });
-const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts', '--production'], { cwd: root, env: { ...process.env, PORT: '4318' }, stdio: 'pipe', windowsHide: true });
+const settingsPath = resolve(root, 'artifacts/test-runtime/demo-settings.json');
+await new SettingsStore(settingsPath).save(defaults);
+const server = spawn(process.execPath, ['node_modules/tsx/dist/cli.mjs', 'src/server/index.ts', '--production'], { cwd: root, env: { ...process.env, PORT: '4318', SETTINGS_PATH: settingsPath }, stdio: 'pipe', windowsHide: true });
 let serverLog = '';
 server.stdout.on('data', chunk => { serverLog += String(chunk); }); server.stderr.on('data', chunk => { serverLog += String(chunk); });
 let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;

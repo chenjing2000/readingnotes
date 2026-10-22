@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { emptySense, layoutKey, parseProject, senseSourceId } from '../../src/models/project';
 
@@ -22,20 +22,20 @@ test('distinct sense keys preserve navigation, page breaks, removal history and 
   const pages = await page.locator('.meaning').evaluateAll(nodes => nodes.map(node => Number(node.closest('.card')!.getAttribute('data-page'))));
   expect(pages[1]).toBeGreaterThan(pages[0]);
   await page.locator('.vocab [data-edit]').filter({ hasText: 'A distinct example.' }).click();
-  await expect(page.getByLabel('词汇例句 1', { exact: true })).toBeFocused();
+  await expect(page.getByLabel('词汇例句 2 义项 1', { exact: true })).toBeFocused();
   await expect(page.getByLabel('词头 2', { exact: true })).toHaveValue('record');
   await meanings.filter({ hasText: 'meaning-two' }).click();
   await expect(page.getByLabel('含义 1 义项 2', { exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: /添加义项|删除.*义项/ })).toHaveCount(0);
   await page.locator('.vocab [data-edit]').filter({ hasText: 'A distinct example.' }).click();
-  await page.getByRole('button', { name: '删除词汇义项 1', exact: true }).click();
+  await page.getByRole('button', { name: '删除词汇 2 义项 1', exact: true }).click();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   let snapshot = await page.evaluate(() => window.editor);
   expect(snapshot.project.vocabulary[1].senses.map(sense => sense.meaning)).toEqual(['记录']);
   expect(snapshot.project.layoutOverrides.manualPageBreaks).toEqual(input.layoutOverrides.manualPageBreaks);
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByLabel('含义 2 义项 2', { exact: true })).toHaveValue('n. 记录');
-  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   snapshot = await page.evaluate(() => window.editor);
   const exported = await request.post('/api/export', { data: { ...snapshot, page: 1 } });

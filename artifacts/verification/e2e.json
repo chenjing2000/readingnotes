@@ -6,9 +6,7 @@
       "test",
       "--config",
       "tools/playwright.config.ts",
-      "tests/e2e/main-idea-indent.spec.ts",
-      "tests/e2e/pagination.spec.ts",
-      "tests/e2e/editor.spec.ts"
+      "--max-failures=4"
     ],
     "configFile": "C:\\Projects\\EnglishNotes\\tools\\playwright.config.ts",
     "rootDir": "C:/Projects/EnglishNotes/tests/e2e",
@@ -20,7 +18,7 @@
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
-    "maxFailures": 0,
+    "maxFailures": 4,
     "metadata": {
       "actualWorkers": 1
     },
@@ -96,6 +94,9 @@
     "workers": 1,
     "webServer": {
       "command": "npm run dev",
+      "env": {
+        "SETTINGS_PATH": "C:\\Projects\\EnglishNotes\\artifacts\\test-runtime\\settings.json"
+      },
       "cwd": "C:\\Projects\\EnglishNotes\\",
       "url": "http://127.0.0.1:4321",
       "reuseExistingServer": false,
@@ -103,6 +104,192 @@
     }
   },
   "suites": [
+    {
+      "title": "compact-editors.spec.ts",
+      "file": "compact-editors.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "each vocabulary sense has one combined editor stacked below the previous sense",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2679,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:13.247Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "100e9deed9649b1ee31e-6b147e98a4d7fab6c5ef",
+          "file": "compact-editors.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "combined meanings support normal sequential typing and backspace without inserting spaces",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2191,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:16.103Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "100e9deed9649b1ee31e-5c1b6be36507caecd2fb",
+          "file": "compact-editors.spec.ts",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "source, main idea and translation editors fit content and shrink after editing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1882,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:18.308Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "100e9deed9649b1ee31e-6bee2bb940daa37fda6c",
+          "file": "compact-editors.spec.ts",
+          "line": 46,
+          "column": 1
+        },
+        {
+          "title": "expression fields retain multiple senses without part-of-speech or sense controls",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1427,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:20.202Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "100e9deed9649b1ee31e-fd37eb58c4d4e8c2074e",
+          "file": "compact-editors.spec.ts",
+          "line": 61,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "current-format.spec.ts",
+      "file": "current-format.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "old schemas are rejected without replacing the current project or draft",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1478,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:21.675Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "ed127cfbd10dca73455e-745e5925817586af5018",
+          "file": "current-format.spec.ts",
+          "line": 4,
+          "column": 1
+        }
+      ]
+    },
     {
       "title": "editor.spec.ts",
       "file": "editor.spec.ts",
@@ -125,12 +312,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 5652,
+                  "duration": 4157,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:24.239Z",
+                  "startTime": "2026-10-22T12:51:23.201Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -159,12 +346,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2278,
+                  "duration": 2576,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:30.072Z",
+                  "startTime": "2026-10-22T12:51:27.369Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -193,12 +380,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1550,
+                  "duration": 1875,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:32.390Z",
+                  "startTime": "2026-10-22T12:51:29.963Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -227,12 +414,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2941,
+                  "duration": 3336,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:33.976Z",
+                  "startTime": "2026-10-22T12:51:31.865Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -261,12 +448,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 10030,
+                  "duration": 10539,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:36.949Z",
+                  "startTime": "2026-10-22T12:51:35.237Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -277,6 +464,496 @@
           "id": "d2f56d7d370f0ba02e91-89e32c1718bb6a2759fa",
           "file": "editor.spec.ts",
           "line": 147,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "entry-highlights.spec.ts",
+      "file": "entry-highlights.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "entry rules collect manual variants and persist without a top-level highlights list",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 7555,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:45.839Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "db06cff6b4969b43e580-31c387463b64f2a4f846",
+          "file": "entry-highlights.spec.ts",
+          "line": 6,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "export-diagnostics.spec.ts",
+      "file": "export-diagnostics.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "export diagnoses project and line differences without misleading installation hints",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4870,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:53.450Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "34dad192e33c8ccbdf86-8fcd20a3fb84dbbe53b2",
+          "file": "export-diagnostics.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "installed Chrome at 100% device scale exports through bundled Chromium",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3592,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:51:58.363Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "34dad192e33c8ccbdf86-ec905dee493b85b1f47b",
+          "file": "export-diagnostics.spec.ts",
+          "line": 25,
+          "column": 40
+        },
+        {
+          "title": "installed Chrome at 125% device scale exports through bundled Chromium",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3521,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:01.989Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "34dad192e33c8ccbdf86-1f278e7e889659de3fec",
+          "file": "export-diagnostics.spec.ts",
+          "line": 25,
+          "column": 40
+        },
+        {
+          "title": "installed Chrome at 150% device scale exports through bundled Chromium",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3444,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:05.541Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "34dad192e33c8ccbdf86-7d10ae11b1b1a6222b6f",
+          "file": "export-diagnostics.spec.ts",
+          "line": 25,
+          "column": 40
+        },
+        {
+          "title": "installed Chrome at 200% device scale exports through bundled Chromium",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3584,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:09.015Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "34dad192e33c8ccbdf86-dbbc74ecce1b6677e5cb",
+          "file": "export-diagnostics.spec.ts",
+          "line": 25,
+          "column": 40
+        }
+      ]
+    },
+    {
+      "title": "font-readiness.spec.ts",
+      "file": "font-readiness.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "cold font loading preserves the first layout including unique part-of-speech characters",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1870,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:12.665Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "99c4f4250672485cc0f3-c065ab64ed68cf7fc9d6",
+          "file": "font-readiness.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "header.spec.ts",
+      "file": "header.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "personalized headers repeat on every page, match typography and persist edits",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3132,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:14.590Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2de9cb50cb022a3f1ddd-6accda92b441afb2d79b",
+          "file": "header.spec.ts",
+          "line": 3,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "import-order.spec.ts",
+      "file": "import-order.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "the latest file wins when an older read finishes later",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1960,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:17.768Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f70f2d17596ca37e2c2c-ea9ce84a5203fce4fa17",
+          "file": "import-order.spec.ts",
+          "line": 4,
+          "column": 41
+        },
+        {
+          "title": "the latest file wins when an older read fails later",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1912,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:19.757Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f70f2d17596ca37e2c2c-73dc14e56eff60f8c571",
+          "file": "import-order.spec.ts",
+          "line": 4,
+          "column": 41
+        }
+      ]
+    },
+    {
+      "title": "layout.spec.ts",
+      "file": "layout.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "splitter resizes both panes by dragging and keyboard without changing pagination",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2014,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:21.714Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9f98fd8c8d1538f5ebbb-c837a3b82686ef4d7856",
+          "file": "layout.spec.ts",
+          "line": 5,
+          "column": 1
+        },
+        {
+          "title": "expressions use four rows and two columns and keep preview navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2319,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:23.761Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9f98fd8c8d1538f5ebbb-2a58ee1ef5b1ea22ac0a",
+          "file": "layout.spec.ts",
+          "line": 31,
+          "column": 1
+        },
+        {
+          "title": "colored expression labels appear once and participate in real line measurement",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 935,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:26.112Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "9f98fd8c8d1538f5ebbb-d42e7d0863df40f61911",
+          "file": "layout.spec.ts",
+          "line": 47,
           "column": 1
         }
       ]
@@ -303,12 +980,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1328,
+                  "duration": 1613,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:47.111Z",
+                  "startTime": "2026-10-22T12:52:27.090Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -322,7 +999,7 @@
           "column": 1
         },
         {
-          "title": "main idea follows the Chinese font size and no individual PNG buttons appear",
+          "title": "main idea has an independent font size and no individual PNG buttons appear",
           "ok": true,
           "tags": [],
           "tests": [
@@ -337,12 +1014,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1300,
+                  "duration": 1992,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:48.448Z",
+                  "startTime": "2026-10-22T12:52:28.737Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -350,7 +1027,7 @@
               "status": "expected"
             }
           ],
-          "id": "70b551b22ff80e2a46c3-253b8607e0153974bd1f",
+          "id": "70b551b22ff80e2a46c3-85cf58e173c503f826a6",
           "file": "main-idea-indent.spec.ts",
           "line": 22,
           "column": 1
@@ -379,12 +1056,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 499,
+                  "duration": 739,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:49.771Z",
+                  "startTime": "2026-10-22T12:52:30.782Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -413,12 +1090,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1182,
+                  "duration": 1755,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:50.279Z",
+                  "startTime": "2026-10-22T12:52:31.549Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -428,7 +1105,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-b0c2d8e17510d75a4f16",
           "file": "pagination.spec.ts",
-          "line": 29,
+          "line": 28,
           "column": 1
         },
         {
@@ -447,12 +1124,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 733,
+                  "duration": 936,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:51.475Z",
+                  "startTime": "2026-10-22T12:52:33.336Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -462,7 +1139,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-b1308fb45886a7617ccd",
           "file": "pagination.spec.ts",
-          "line": 76,
+          "line": 75,
           "column": 1
         },
         {
@@ -481,12 +1158,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2371,
+                  "duration": 3034,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:52.221Z",
+                  "startTime": "2026-10-22T12:52:34.305Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -496,7 +1173,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-c10663b987c63f44e6b2",
           "file": "pagination.spec.ts",
-          "line": 86,
+          "line": 85,
           "column": 1
         },
         {
@@ -515,12 +1192,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1010,
+                  "duration": 1703,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:54.603Z",
+                  "startTime": "2026-10-22T12:52:37.369Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -530,7 +1207,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-be972e561db81252ff62",
           "file": "pagination.spec.ts",
-          "line": 104,
+          "line": 103,
           "column": 1
         },
         {
@@ -549,12 +1226,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1080,
+                  "duration": 2041,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:55.624Z",
+                  "startTime": "2026-10-22T12:52:39.098Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -564,7 +1241,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-82c5608f437607c97aad",
           "file": "pagination.spec.ts",
-          "line": 114,
+          "line": 113,
           "column": 1
         },
         {
@@ -583,12 +1260,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 792,
+                  "duration": 1172,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:56.726Z",
+                  "startTime": "2026-10-22T12:52:41.165Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -598,7 +1275,7 @@
           ],
           "id": "ffb96fb2c9977d04c390-4e80509ccaa8b2b8b73d",
           "file": "pagination.spec.ts",
-          "line": 125,
+          "line": 124,
           "column": 1
         },
         {
@@ -617,12 +1294,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1568,
+                  "duration": 2315,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-22T11:09:57.541Z",
+                  "startTime": "2026-10-22T12:52:42.378Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -632,7 +1309,421 @@
           ],
           "id": "ffb96fb2c9977d04c390-154ecb06910673eeca24",
           "file": "pagination.spec.ts",
-          "line": 137,
+          "line": 136,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "refresh-highlights.spec.ts",
+      "file": "refresh-highlights.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "manual heads retain surface rules, senses stay paired and refresh preserves rule-only highlights",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 6557,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:44.757Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b13754f0a00f788ed6be-d771fa32ba2b3f9b7a62",
+          "file": "refresh-highlights.spec.ts",
+          "line": 6,
+          "column": 1
+        },
+        {
+          "title": "import stays unready while reading and refreshing unchanged rules does not add history",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4285,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:51.356Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b13754f0a00f788ed6be-d8af08ed0e2a7b2649a6",
+          "file": "refresh-highlights.spec.ts",
+          "line": 69,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "senses-navigation.spec.ts",
+      "file": "senses-navigation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "distinct sense keys preserve navigation, page breaks, removal history and export",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3663,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:55.722Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "b173f033b0acfb8f2639-d062a8421d2eb2421c02",
+          "file": "senses-navigation.spec.ts",
+          "line": 5,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "settings.spec.ts",
+      "file": "settings.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "shared settings persist independently of articles and determine exact export dimensions",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 5603,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:52:59.443Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d877ffdf71ec720167ae-9144734e80de21ed149c",
+          "file": "settings.spec.ts",
+          "line": 7,
+          "column": 1
+        },
+        {
+          "title": "Undo and Redo retain at most ten changes and clear redo on a new edit",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2799,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:05.072Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d877ffdf71ec720167ae-37759b7662a3138dad89",
+          "file": "settings.spec.ts",
+          "line": 48,
+          "column": 1
+        },
+        {
+          "title": "missing settings are rebuilt and damaged settings require an explicit reset",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1894,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:07.884Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d877ffdf71ec720167ae-a04ba1d58a2d2e1356b2",
+          "file": "settings.spec.ts",
+          "line": 61,
+          "column": 1
+        },
+        {
+          "title": "undo during an in-flight settings save persists the latest visible settings",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2447,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:09.795Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "d877ffdf71ec720167ae-55b439e42fd01d7796a8",
+          "file": "settings.spec.ts",
+          "line": 76,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "table-sizing.spec.ts",
+      "file": "table-sizing.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "vocabulary cells are single-line editors with centered content",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2363,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:12.276Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2967db00d9b7dc5f73e0-31cedd9503ad5a03c2ae",
+          "file": "table-sizing.spec.ts",
+          "line": 3,
+          "column": 1
+        },
+        {
+          "title": "expression editors fit initial content, editing, undo and changed column widths",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3454,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:14.657Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "2967db00d9b7dc5f73e0-3dccdca880cd4d683946",
+          "file": "table-sizing.spec.ts",
+          "line": 22,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "vocabulary.spec.ts",
+      "file": "vocabulary.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "per-word vocabulary tables edits and moves the selected row, inserts below it and handles an empty table",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 3308,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:18.162Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0ea51dc78eb348268e27-6af3a5866f0f36758e4b",
+          "file": "vocabulary.spec.ts",
+          "line": 4,
+          "column": 1
+        },
+        {
+          "title": "table fields preserve part of speech, drafts, page breaks and preview navigation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4206,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-22T12:53:21.508Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "0ea51dc78eb348268e27-35ba7a76976c7fd7470f",
+          "file": "vocabulary.spec.ts",
+          "line": 59,
           "column": 1
         }
       ]
@@ -640,9 +1731,9 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-22T11:09:20.011Z",
-    "duration": 40082.704000000005,
-    "expected": 15,
+    "startTime": "2026-10-22T12:51:09.042Z",
+    "duration": 138048.87399999998,
+    "expected": 44,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0

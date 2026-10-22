@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 import { parseProject } from '../../src/models/project';
 

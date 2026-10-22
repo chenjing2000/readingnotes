@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, splitSenseMeaning, toggleHighlight, type EntryCollection, type Project, type Sense, type Styles } from '../models/project';
+import { collectHighlights, commitEntryHead, defaults, editParagraph, emptySense, newId, parseProject, removeEntrySense, splitSenseMeaning, toggleHighlight, type EntryCollection, projectDocument, styleSchema, type RenderProject, type Project, type Sense, type Styles } from '../models/project';
 import { paginate, type Layout } from '../services/pagination';
-import { cacheDraft, download, readProject, requestExport, restoreDraft } from '../services/projectIO';
+import { cacheDraft, download, loadSettings, saveSettings, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
 type ParagraphCollection = 'source' | 'translation';
-const stringify = (project: Project) => JSON.stringify(project, null, 2);
+const stringify = (project: Project) => JSON.stringify(projectDocument(project as RenderProject), null, 2);
 
 export function useEditorViewModel() {
   const [boot] = useState(restoreDraft);
-  const [history, setHistory] = useState<{ past: Project[]; present: Project; future: Project[] }>({ past: [], present: boot.project, future: [] });
+  const [history, setHistory] = useState<{ past: RenderProject[]; present: RenderProject; future: RenderProject[] }>({ past: [], present: { ...boot.project, styles: { ...defaults } }, future: [] });
   const project = history.present;
   const [vocabularySelection, setVocabularySelection] = useState<string | null>(null);
   const vocabularyIndex = project.vocabulary.findIndex(entry => entry.id === vocabularySelection);
@@ -18,20 +18,66 @@ export function useEditorViewModel() {
   const [error, setError] = useState('');
   const [cacheStatus, setCacheStatus] = useState('');
   const [lastFile, setLastFile] = useState('');
-  const [rendered, setRendered] = useState<{ project: Project; layout: Layout } | null>(null);
+  const [rendered, setRendered] = useState<{ project: RenderProject; layout: Layout } | null>(null);
   const [highlightRefresh, setHighlightRefresh] = useState(0);
   const lastHighlightRefresh = useRef(0);
   const [exporting, setExporting] = useState(false);
   const [opening, setOpening] = useState(false);
   const openRequest = useRef(0);
-  const ready = !opening && rendered?.project === project;
+  const [settingsReady, setSettingsReady] = useState(false);
+  const [settingsNotice, setSettingsNotice] = useState('正在读取配置…');
+  const savedSettings = useRef('');
+  const settingsQueue = useRef(Promise.resolve());
+  const pendingSettingsSaves = useRef(0);
+  const settingsRevision = useRef(0);
+  const ready = settingsReady && !opening && rendered?.project === project;
   const hasFileChanges = lastFile !== stringify(project);
 
-  function update(next: Project | ((current: Project) => Project)) {
-    setHistory(current => ({ past: [...current.past.slice(-99), current.present], present: typeof next === 'function' ? next(current.present) : next, future: [] }));
+  function update(next: Project | ((current: RenderProject) => Project)) {
+    setHistory(current => {
+      const result = typeof next === 'function' ? next(current.present) : next;
+      if (result === current.present) return current;
+      return { past: [...current.past.slice(-9), current.present], present: { ...result, styles: 'styles' in result ? (result as RenderProject).styles : current.present.styles }, future: [] };
+    });
   }
   function undo() { setHistory(current => current.past.length ? { past: current.past.slice(0, -1), present: current.past.at(-1)!, future: [current.present, ...current.future] } : current); }
   function redo() { setHistory(current => current.future.length ? { past: [...current.past, current.present], present: current.future[0], future: current.future.slice(1) } : current); }
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSettings().then(result => {
+      if (cancelled) return;
+      const styles = styleSchema.parse(result.settings);
+      savedSettings.current = JSON.stringify(styles);
+      setHistory(current => ({ past: [], present: { ...current.present, styles }, future: [] }));
+      setSettingsNotice(result.error ?? '配置已保存'); setSettingsReady(true);
+    }).catch(reason => { if (!cancelled) { setError(`配置读取失败：${String(reason)}。请刷新重试。`); setSettingsNotice('配置未读取'); } });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
+    if (!settingsReady) return;
+    const revision = ++settingsRevision.current;
+    const parsed = styleSchema.safeParse(project.styles);
+    if (!parsed.success) { setSettingsNotice(`配置无效，未保存：${parsed.error.issues.map(issue => issue.message).join(' ')}`); return; }
+    const serialized = JSON.stringify(parsed.data);
+    if (serialized === savedSettings.current && pendingSettingsSaves.current === 0) {
+      setSettingsNotice(current => current === '配置未保存' ? '配置已保存' : current);
+      return;
+    }
+    setSettingsNotice('配置未保存');
+    const timer = setTimeout(() => {
+      pendingSettingsSaves.current++;
+      settingsQueue.current = settingsQueue.current.then(async () => {
+        try {
+          if (revision !== settingsRevision.current) return;
+          await saveSettings(parsed.data); savedSettings.current = serialized;
+          if (revision === settingsRevision.current) setSettingsNotice('配置已保存');
+        } catch (reason) { if (revision === settingsRevision.current) setSettingsNotice(`配置未保存：${String(reason)}`); }
+        finally { pendingSettingsSaves.current--; }
+      });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [project.styles, settingsReady]);
 
   useEffect(() => {
     if (boot.cacheBlocked) { setCacheStatus('自动缓存已停用，旧草稿未覆盖，请保存 JSON。'); return; }
@@ -41,6 +87,9 @@ export function useEditorViewModel() {
     } catch { setCacheStatus('自动草稿保存失败！请立即下载 JSON 备份。'); }
   }, [project]);
   useEffect(() => {
+    if (!settingsReady) return;
+    const valid = styleSchema.safeParse(project.styles);
+    if (!valid.success) { setRendered(null); return; }
     let cancelled = false;
     const timer = setTimeout(() => {
       paginate(project).then(layout => {
@@ -54,12 +103,12 @@ export function useEditorViewModel() {
       }).catch(reason => { if (!cancelled) setError(`分页失败：${String(reason)}。请检查字号、边距或恢复模板默认。`); });
     }, 120);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [project, highlightRefresh]);
+  }, [project, highlightRefresh, settingsReady]);
   useEffect(() => {
-    const warn = (event: BeforeUnloadEvent) => { if (hasFileChanges) event.preventDefault(); };
+    const warn = (event: BeforeUnloadEvent) => { if (hasFileChanges || pendingSettingsSaves.current > 0 || (settingsReady && JSON.stringify(project.styles) !== savedSettings.current)) event.preventDefault(); };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
-  }, [hasFileChanges]);
+  }, [hasFileChanges, settingsReady, project.styles]);
 
   async function open(file?: File) {
     if (!file) return;
@@ -74,7 +123,7 @@ export function useEditorViewModel() {
   }
   function save() {
     try {
-      const contents = stringify(parseProject(project));
+      const contents = stringify(parseProject(projectDocument(project)));
       download(new Blob([contents], { type: 'application/json' }), 'reading-project.json');
       setLastFile(contents); setNotice('已发起 JSON 下载，请在浏览器下载列表确认文件已落盘。');
     } catch (reason) { setError(`项目保存失败：${String(reason)}`); }
@@ -172,7 +221,7 @@ export function useEditorViewModel() {
   function setStyle<K extends keyof Styles>(key: K, value: Styles[K]) {
     update(current => ({ ...current, styles: { ...current.styles, [key]: value } }));
   }
-  function resetStyles() { update(current => ({ ...current, styles: { ...defaults } })); }
+  function resetStyles() { savedSettings.current = ''; update(current => ({ ...current, styles: { ...defaults } })); }
   function clearWarnings() { update(current => ({ ...current, warnings: [] })); }
   function clearError() { setError(''); }
   function downloadRejectedDraft() {
@@ -180,7 +229,7 @@ export function useEditorViewModel() {
   }
 
   return {
-    project, notice, error, cacheStatus, ready, exporting, hasFileChanges,
+    project, notice, error, cacheStatus, settingsNotice, settingsReady, ready, exporting, hasFileChanges,
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,

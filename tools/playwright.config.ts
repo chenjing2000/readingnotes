@@ -7,5 +7,5 @@ export default defineConfig({
   testDir: resolve(root, 'tests/e2e'), outputDir: resolve(root, 'artifacts/test-results'), timeout: 120000, workers: 1,
   reporter: [['list'], ['json', { outputFile: resolve(root, 'artifacts/verification/e2e.json') }]],
   use: { baseURL, viewport: { width: 1440, height: 1000 } },
-  webServer: { command: 'npm run dev', cwd: root, url: baseURL, reuseExistingServer: false, timeout: 120000 },
+  webServer: { command: 'npm run dev', env: { SETTINGS_PATH: resolve(root, 'artifacts/test-runtime/settings.json') }, cwd: root, url: baseURL, reuseExistingServer: false, timeout: 120000 },
 });

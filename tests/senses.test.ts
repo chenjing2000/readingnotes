@@ -4,7 +4,7 @@ import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntr
 
 it('round-trips schema 3 without scalar entry fields', () => {
   const project = parseProject(fixture);
-  expect(project.schemaVersion).toBe(3);
+  expect(project.schemaVersion).toBe(4);
   expect(project.vocabulary[0].senses[0]).toMatchObject(fixture.vocabulary[0].senses[0]);
   expect(project.expressions[0].senses[0]).toMatchObject(fixture.expressions[0].senses[0]);
   expect(project.vocabulary[0]).not.toHaveProperty('pos');
@@ -24,7 +24,7 @@ it('splits a combined sense editor without mixing meanings or changing custom ex
 it('keeps distinct senses and their examples together and rejects missing sense lists', () => {
   const project = parseProject(fixture);
   const sense = { pos: 'n.', meaning: '记录', example: 'Keep a record.', exampleTranslation: '保留记录。' };
-  const input = { ...project, schemaVersion: 3, vocabulary: [{ id: 'v', word: 'record', ipa: '', highlight: ['recorded'], senses: [sense, { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' }] }] };
+  const input = { ...project, schemaVersion: 4, vocabulary: [{ id: 'v', word: 'record', ipa: '', highlight: ['recorded'], senses: [sense, { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' }] }] };
   expect(parseProject(input).vocabulary[0].senses).toEqual(input.vocabulary[0].senses);
   expect(() => parseProject({ ...input, vocabulary: [{ ...input.vocabulary[0], senses: undefined }] })).toThrow();
 });

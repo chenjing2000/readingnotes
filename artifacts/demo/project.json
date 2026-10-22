@@ -392,20 +392,6 @@
     "manualPageBreaks": [],
     "elementStyles": {}
   },
-  "schemaVersion": 3,
-  "styles": {
-    "titleSize": 40,
-    "bodySize": 36,
-    "phraseSize": 36,
-    "translationSize": 32,
-    "lineHeight": 1.45,
-    "translationLineHeight": 1.62,
-    "paragraphGap": 18,
-    "marginX": 54,
-    "marginTop": 34,
-    "marginBottom": 80,
-    "accent": "#b81a35",
-    "divider": "#007175"
-  },
+  "schemaVersion": 4,
   "warnings": []
 }

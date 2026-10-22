@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { unzipSync, strFromU8 } from 'fflate';
 import { readFile } from 'node:fs/promises';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
@@ -6,7 +6,7 @@ import fixture from '../../assets/projects/brainco/project.json' with { type: 'j
 test('entry rules collect manual variants and persist without a top-level highlights list', async ({ page, request }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const input = {
-    ...fixture, schemaVersion: 3,
+    ...fixture, schemaVersion: 4,
     source: { paragraphs: [{ id: 'p1', text: 'RUN runs runner. They took off and take off. run. They ran away.' }] },
     vocabulary: [{ id: 'v1', word: 'run', ipa: '/rʌn/', highlight: ['run', 'runs'], senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }],
     expressions: [{ id: 'x1', phrase: 'take off', highlight: ['take off', 'took off'], senses: [{ pos: '', meaning: '起飞', example: 'They took off.', exampleTranslation: '他们起飞了。' }] }],
@@ -20,9 +20,9 @@ test('entry rules collect manual variants and persist without a top-level highli
   await source.evaluate(node => { const textarea = node as HTMLTextAreaElement; textarea.focus(); textarea.setSelectionRange(0, 3); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
   await expect(marks).toHaveText(['runs', 'took off', 'take off']);
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(marks).toHaveCount(5);
-  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(marks).toHaveCount(3);
   await source.evaluate(node => { const textarea = node as HTMLTextAreaElement; const start = textarea.value.indexOf('runner'); textarea.focus(); textarea.setSelectionRange(start, start + 3); });
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
@@ -51,7 +51,7 @@ test('entry rules collect manual variants and persist without a top-level highli
   const exportedProject = JSON.parse(strFromU8(files['project.json']));
   expect(exportedProject.vocabulary[0].highlight).toEqual(['runs']);
   expect(exportedProject).not.toHaveProperty('highlights');
-  expect(exportedProject).toEqual(snapshot.project);
+  const { styles: _settings, ...document } = snapshot.project; expect(exportedProject).toEqual(document);
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await page.getByRole('button', { name: '在选中词汇下方添加空白行', exact: true }).click();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();

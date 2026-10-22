@@ -1,13 +1,13 @@
-import { test, expect, chromium } from '@playwright/test';
+import { test, expect, chromium } from './fixtures';
 import { mkdtemp } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
-import { parseProject } from '../../src/models/project';
+import { parseRenderProject, projectDocument } from '../../src/models/project';
 
 test('phrase can finish a page while its meaning and example continue on next', async ({ page }) => {
   await page.goto('/render');
   await page.waitForFunction(() => typeof window.renderProject === 'function');
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   project.title = 'Boundary'; project.vocabulary = [];
   project.source.paragraphs = [{ id: 'filler', text: 'Filler sentence. '.repeat(70) }];
   project.expressions = [{ id: 'target', phrase: 'target phrase', senses: [{ pos: '', meaning: '中文含义', example: 'An example follows.', exampleTranslation: '例句译文。' }], highlight: [] }];
@@ -16,9 +16,8 @@ test('phrase can finish a page while its meaning and example continue on next', 
     const body = node.closest('.page-body')!.getBoundingClientRect();
     return body.bottom - node.getBoundingClientRect().bottom;
   });
-  project.styles.marginBottom += space - 10;
-  expect(project.styles.marginBottom).toBeLessThanOrEqual(400);
-  expect(project.styles.marginBottom).toBeGreaterThanOrEqual(65);
+  project.styles.pageHeight -= Math.ceil(space - 10);
+  expect(project.styles.pageHeight).toBeGreaterThanOrEqual(400);
   await page.evaluate(input => window.renderProject(input), project);
   const phrasePage = await page.locator('[data-source="target:phrase"]').evaluate(node => Number(node.closest('.card')!.getAttribute('data-page')));
   const meaningPage = await page.locator('[data-source="target:meaning"]').evaluate(node => Number(node.closest('.card')!.getAttribute('data-page')));
@@ -28,7 +27,7 @@ test('phrase can finish a page while its meaning and example continue on next', 
 
 test('all rendered fields preserve exact text and visible glyphs fit, including extreme styles and explicit newlines', async ({ page }) => {
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   project.source.paragraphs[0].text += '\nA new line.\n\n👩🏽‍💻 é ' + 'X'.repeat(500) + ' hello ' + ' '.repeat(400) + 'world';
   project.vocabulary[0].word = 'W'.repeat(100);
   project.vocabulary[0].senses[0].meaning = '超长释义'.repeat(80);
@@ -124,7 +123,7 @@ test('corrupt drafts stay recoverable and narrow preview footer matches export s
 
 test('business IDs cannot collide with internal title or expression keys; vocabulary retains array order', async ({ page }) => {
   await page.goto('/render'); await page.waitForFunction(() => typeof window.renderProject === 'function');
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   project.vocabulary[0].highlight = ['Article'];
   project.source.paragraphs = [{ id: 'title', text: 'Article with title ID.' }, { id: 'x-1:example', text: 'Article with expression ID.' }];
   await page.evaluate(input => window.renderProject(input), project);
@@ -136,11 +135,11 @@ test('business IDs cannot collide with internal title or expression keys; vocabu
 
 test('manual break with mainIdea paragraph ID affects only the chosen logical block', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
-  const project = parseProject(fixture);
+  const project = parseRenderProject(fixture);
   project.vocabulary = []; project.expressions = [];
   project.source.paragraphs = [{ id: 'mainIdea', text: 'A short article.' }];
   project.translation.paragraphs = []; project.mainIdea = 'Short summary.';
-  await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'project.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });
+  await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'project.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(projectDocument(project))) });
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByLabel('英文段落 1 前换页', { exact: true }).check();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();

@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { unzipSync, strFromU8 } from 'fflate';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
@@ -25,13 +25,12 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   const head = page.getByLabel('词头 2', { exact: true });
   await head.fill('rec'); await head.fill('record'); await head.press('Enter');
   await page.getByLabel('含义 2', { exact: true }).fill('n. 记录');
-  await page.getByText('选中词汇的义项与例句', { exact: true }).click();
-  await page.getByLabel('词汇例句 1', { exact: true }).fill('Keep a record.');
-  await page.getByLabel('词汇翻译 1', { exact: true }).fill('保留记录。');
-  await page.getByRole('button', { name: '为选中词汇添加义项', exact: true }).click();
+  await page.getByLabel('词汇例句 2 义项 1', { exact: true }).fill('Keep a record.');
+  await page.getByLabel('词汇翻译 2 义项 1', { exact: true }).fill('保留记录。');
+  await page.getByRole('button', { name: '为词汇 2 添加义项', exact: true }).click();
   await page.getByLabel('含义 2 义项 2', { exact: true }).fill('v. 录制');
-  await page.getByLabel('词汇例句 2', { exact: true }).fill('They recorded it.');
-  await page.getByLabel('词汇翻译 2', { exact: true }).fill('他们录制了它。');
+  await page.getByLabel('词汇例句 2 义项 2', { exact: true }).fill('They recorded it.');
+  await page.getByLabel('词汇翻译 2 义项 2', { exact: true }).fill('他们录制了它。');
   await page.getByRole('button', { name: '表达', exact: true }).click();
   await page.getByRole('button', { name: '添加表达', exact: true }).click();
   await page.getByLabel('短语 2', { exact: true }).fill('took off');
@@ -44,7 +43,7 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await expect(page.getByRole('status')).toContainText('已刷新高亮：命中 4 处。');
   const pending = page.waitForEvent('download'); await page.getByRole('button', { name: '保存 JSON', exact: true }).click();
   const saved = JSON.parse(await readFile((await (await pending).path())!, 'utf8'));
-  expect(saved.schemaVersion).toBe(3);
+  expect(saved.schemaVersion).toBe(4);
   expect(saved.vocabulary[1].highlight).toEqual(['record']);
   expect(saved.vocabulary[1].senses).toEqual([
     { pos: 'n.', meaning: '记录', example: 'Keep a record.', exampleTranslation: '保留记录。' },
@@ -57,7 +56,7 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await expect(marks).toHaveText(['ran', 'record', 'took off', 'take off']);
   const snapshot = await page.evaluate(() => window.editor);
-  expect(snapshot.project).toEqual(saved);
+  const { styles: _settings, ...document } = snapshot.project; expect(document).toEqual(saved);
   const result = await request.post('/api/export', { data: snapshot });
   expect(result.ok(), result.ok() ? '' : await result.text()).toBe(true);
   const exported = JSON.parse(strFromU8(unzipSync(await result.body())['project.json']));
@@ -85,7 +84,7 @@ test('import stays unready while reading and refreshing unchanged rules does not
     await expect(page.locator('[data-ready="true"]')).toBeVisible();
   }
   await expect(page.getByRole('status')).toContainText('已刷新高亮：命中 0 处。');
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   expect(await page.evaluate(() => window.editor.project)).toEqual(original);
 });

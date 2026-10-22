@@ -6,9 +6,10 @@ type Props = {
   onChange: (value: string) => void;
   inputRef: (input: HTMLTextAreaElement | null) => void;
   onBlur?: () => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement>;
 };
 
-export default function AutoSizeTextarea({ label, value, onChange, inputRef, onBlur }: Props) {
+export default function AutoSizeTextarea({ label, value, onChange, inputRef, onBlur, onKeyDown }: Props) {
   const input = useRef<HTMLTextAreaElement | null>(null);
   useLayoutEffect(() => {
     const element = input.current!;
@@ -28,5 +29,5 @@ export default function AutoSizeTextarea({ label, value, onChange, inputRef, onB
     return () => { observer.disconnect(); document.fonts.removeEventListener('loadingdone', fit); };
   }, [value]);
   return <textarea aria-label={label} rows={1} value={value} ref={element => { input.current = element; inputRef(element); }}
-    onChange={event => onChange(event.target.value)} onBlur={onBlur} />;
+    onChange={event => onChange(event.target.value)} onBlur={onBlur} onKeyDown={onKeyDown} />;
 }

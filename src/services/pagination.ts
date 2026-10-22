@@ -1,4 +1,4 @@
-import { collectHighlights, layoutKey, senseSourceId, type HighlightRange, type Project, type Styles } from '../models/project';
+import { collectHighlights, layoutKey, senseSourceId, type HighlightRange, type RenderProject as Project, type Styles, styleSchema } from '../models/project';
 import type { LayoutDiagnostics, LayoutRecord } from './layoutVerification';
 
 export type Block = { id: string; text: string; kind: string; indent?: boolean; gap?: number; runs?: { start: number; end: number; kind: string; edit?: string }[] };
@@ -18,21 +18,21 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
   let color = '#1f1f1f';
   switch (block.kind) {
     case 'title': fontSize = styles.titleSize; lineHeight = 1.22; fontWeight = '800'; break;
-    case 'section-heading': fontSize = 24; lineHeight = 1.4; fontWeight = '800'; color = styles.divider; break;
-    case 'vocab-heading': fontSize = 22; lineHeight = 1.4; fontWeight = '800'; color = '#444'; break;
-    case 'vocab': fontSize = 29; lineHeight = 1.6; break;
-    case 'word': fontSize = 33; fontWeight = '800'; color = styles.accent; break;
-    case 'ipa': fontSize = 23; color = '#666'; break;
-    case 'pos': fontSize = 25; color = '#666'; break;
-    case 'vocab-meaning': fontSize = 27; break;
-    case 'vocab-label': fontSize = 25; color = '#006d87'; break;
-    case 'vocab-example': fontSize = 25; break;
-    case 'phrase': fontSize = styles.phraseSize; lineHeight = 1.25; fontWeight = '800'; color = styles.accent; break;
-    case 'meaning': fontSize = 33; lineHeight = 1.35; break;
-    case 'example': fontSize = 34; lineHeight = 1.43; break;
-    case 'exampleTranslation': fontSize = 31; lineHeight = 1.45; color = '#555'; break;
+    case 'section-heading': fontSize = styles.headingSize; lineHeight = 1.4; fontWeight = '800'; color = '#d9883d'; break;
+    case 'vocab-heading': fontSize = styles.headingSize; lineHeight = 1.4; fontWeight = '800'; color = '#d9883d'; break;
+    case 'vocab': fontSize = styles.vocabularySize; lineHeight = styles.lineHeight; break;
+    case 'word': fontSize = styles.wordSize; fontWeight = '800'; color = '#b81a35'; break;
+    case 'ipa': fontSize = styles.vocabularySize; color = '#666'; break;
+    case 'pos': fontSize = styles.vocabularySize; color = '#666'; break;
+    case 'vocab-meaning': fontSize = styles.vocabularySize; break;
+    case 'vocab-label': fontSize = styles.vocabularySize; color = '#006d87'; break;
+    case 'vocab-example': fontSize = styles.vocabularySize; break;
+    case 'phrase': fontSize = styles.phraseSize; lineHeight = 1.25; fontWeight = '800'; color = '#b81a35'; break;
+    case 'meaning': fontSize = styles.expressionSize; lineHeight = styles.translationLineHeight; break;
+    case 'example': fontSize = styles.expressionSize; lineHeight = styles.lineHeight; break;
+    case 'exampleTranslation': fontSize = styles.expressionSize; lineHeight = styles.translationLineHeight; color = '#555'; break;
     case 'translation': fontSize = styles.translationSize; lineHeight = styles.translationLineHeight; break;
-    case 'mainIdea': fontSize = styles.translationSize; lineHeight = 1.54; break;
+    case 'mainIdea': fontSize = styles.mainIdeaSize; lineHeight = styles.translationLineHeight; break;
   }
   return { fontSize: `${fontSize}px`, lineHeight: String(lineHeight), fontWeight, color, fontFamily: FONT, letterSpacing: block.kind === 'article' ? '-0.2px' : 'normal' };
 }
@@ -55,7 +55,7 @@ function appendText(element: HTMLElement, project: Project, block: Block, start:
     const value = block.text.slice(left, right);
     if (marks.some(mark => mark.start <= left && mark.end >= right)) {
       const strong = document.createElement('strong'); strong.className = 'hot'; strong.textContent = value;
-      strong.style.color = project.styles.accent; content.append(strong);
+      strong.style.color = '#b81a35'; content.append(strong);
     } else {
       const run = runs.find(run => run.start <= left && run.end >= right);
       if (run) {
@@ -158,6 +158,7 @@ function renderLine(project: Project, line: Line, width: number, highlights: Hig
 }
 
 export async function paginate(project: Project): Promise<Layout> {
+  styleSchema.parse(project.styles);
   const highlights = collectHighlights(project);
   const host = document.createElement('div'); host.className = 'measurement';
   Object.assign(host.style, { position: 'absolute', left: '-20000px', top: '0', visibility: 'hidden' });
@@ -176,9 +177,12 @@ export async function paginate(project: Project): Promise<Layout> {
     const warnings: string[] = [];
     if (!document.fonts.check('400 32px "Noto Sans SC"', '中文')) warnings.push('中文字体未就绪，使用系统字体；请确认预览后重试导出。');
     const styles = project.styles;
-    const width = 1200 - 2 * styles.marginX;
-    const bodyTop = styles.marginTop + 42;
-    const bodyHeight = 1600 - bodyTop - styles.marginBottom;
+    const width = styles.pageWidth - 2 * styles.marginX;
+    const bodyTop = styles.marginTop + Math.max(42, styles.headerSize * 1.4 + 16);
+    const bodyHeight = styles.pageHeight - bodyTop - styles.marginBottom;
+    const headerMeasure = document.createElement('canvas').getContext('2d')!;
+    headerMeasure.font = `800 ${styles.headerSize}px "Nunito Sans"`;
+    if (headerMeasure.measureText(LABELS.header).width + LABELS.header.length * 2 > width) throw new Error('页眉文字无法放入当前页面宽度，请减小页眉字号或边距。');
     const pages: HTMLElement[] = [];
     let pageBody: HTMLElement;
     let used = 0;
@@ -186,21 +190,23 @@ export async function paginate(project: Project): Promise<Layout> {
     const coverage = new Map<string, { original: string; pieces: { start: number; end: number }[] }>();
     function newPage() {
       const page = document.createElement('section'); page.className = 'card'; page.dataset.page = String(pages.length + 1);
+      page.style.width = `${styles.pageWidth}px`; page.style.height = `${styles.pageHeight}px`;
       const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = LABELS.header;
       const header = document.createElement('header'); header.className = 'page-header';
       Object.assign(header.style, { top: `${styles.marginTop}px`, left: `${styles.marginX}px`, right: `${styles.marginX}px` });
       const personalized = document.createElement('span'); personalized.className = 'eyebrow personalized-header'; personalized.textContent = project.personalizedHeader;
+      eyebrow.style.fontSize = personalized.style.fontSize = `${styles.headerSize}px`;
       header.append(eyebrow, personalized);
       pageBody = document.createElement('main'); pageBody.className = 'page-body';
       Object.assign(pageBody.style, { top: `${bodyTop}px`, left: `${styles.marginX}px`, width: `${width}px`, height: `${bodyHeight}px` });
       const footer = document.createElement('footer'); footer.className = 'footer';
-      Object.assign(footer.style, { left: `${styles.marginX}px`, right: `${styles.marginX}px` });
+      Object.assign(footer.style, { left: `${styles.marginX}px`, right: `${styles.marginX}px`, fontSize: `${styles.footerSize}px` });
       const label = document.createElement('span'); label.textContent = LABELS.footer;
       const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!; context.font = '17px "Nunito Sans"';
+      const context = canvas.getContext('2d')!; context.font = `${styles.footerSize}px "Nunito Sans"`;
       const labelWidth = context.measureText(label.textContent).width + .4 * label.textContent.length;
-      const factor = Math.min(1, (width - 110) / labelWidth);
-      label.style.fontSize = `${17 * factor}px`; label.style.letterSpacing = `${.4 * factor}px`;
+      const factor = Math.min(1, (width - Math.max(110, styles.footerSize * 6)) / labelWidth);
+      label.style.fontSize = `${styles.footerSize * factor}px`; label.style.letterSpacing = `${.4 * factor}px`;
       footer.append(label, document.createElement('span'));
       page.append(header, pageBody, footer); pages.push(page); used = 0;
     }

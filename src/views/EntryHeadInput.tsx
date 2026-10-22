@@ -11,7 +11,8 @@ export default function EntryHeadInput({ label, value, multiline, commit, inputR
   const [draft, setDraft] = useState(value);
   useEffect(() => setDraft(value), [value]);
   const finish = () => { if (draft !== value) commit(draft); };
-  if (multiline) return <AutoSizeTextarea label={label} value={draft} onChange={setDraft} onBlur={finish} inputRef={inputRef} />;
+  if (multiline) return <AutoSizeTextarea label={label} value={draft} onChange={setDraft} onBlur={finish} inputRef={inputRef}
+    onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.blur(); } }} />;
   return <input type="text" aria-label={label} value={draft} ref={inputRef} onChange={event => setDraft(event.target.value)} onBlur={finish}
     onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.blur(); } }} />;
 }

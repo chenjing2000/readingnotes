@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 test('personalized headers repeat on every page, match typography and persist edits', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
@@ -21,9 +21,9 @@ test('personalized headers repeat on every page, match typography and persist ed
   }))).toBe(true);
   await input.fill('My reading notes');
   await expect(headers.first()).toHaveText('My reading notes');
-  await page.getByRole('button', { name: '撤销', exact: true }).click();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(input).toHaveValue('SOME BIRDS ON TREE');
-  await page.getByRole('button', { name: '重做', exact: true }).click();
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(headers.first()).toHaveText('My reading notes');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.reload();

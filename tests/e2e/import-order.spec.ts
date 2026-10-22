@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
 
 for (const staleFails of [false, true]) test(`the latest file wins when an older read ${staleFails ? 'fails' : 'finishes'} later`, async ({ page }) => {
