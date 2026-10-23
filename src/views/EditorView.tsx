@@ -87,11 +87,10 @@ export default function EditorView() {
         {tab === '原文' && <>
           <label className="field"><span>个性化页眉</span><input type="text" aria-label="个性化页眉" value={project.personalizedHeader} onChange={event => vm.setProjectText('personalizedHeader', event.target.value)} /></label>
           {field('英文标题', project.title, value => vm.setProjectText('title', value), 'project:title')}
-          <p className="hint">在下方英文框选择文字，再点“标注 / 取消”。高亮字号始终继承正文。</p>
+          <p className="hint">在下方英文框选择文字，再点“高亮 / 取消高亮”。高亮字号始终继承正文。</p>
           {project.source.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
             {field(`英文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('source', paragraph.id, value), `source:${paragraph.id}`)}
-            <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button></div>
-            <button onClick={() => vm.removeParagraph('source', paragraph.id)}>删除英文段落 {index + 1}</button>
+            <div className="entry-toolbar"><button aria-label={`高亮 / 取消高亮 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>高亮 / 取消高亮</button></div>
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('source')}>添加英文段落</button>
         </>}
@@ -102,7 +101,6 @@ export default function EditorView() {
           {project.translation.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
             {field(`中文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('translation', paragraph.id, value), `translation:${paragraph.id}`)}
             {!paragraph.text && <p className="hint">空段落将保留，不影响其他段落。</p>}
-            <div className="entry-toolbar"><span className="spacer" /><button onClick={() => vm.removeParagraph('translation', paragraph.id)}>删除中文段落 {index + 1}</button></div>
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('translation')}>添加中文段落</button>
         </>}

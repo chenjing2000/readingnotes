@@ -18,19 +18,19 @@ test('entry rules collect manual variants and persist without a top-level highli
   await page.screenshot({ path: 'artifacts/test-results/entry-highlights.png' });
   const source = page.getByLabel('英文段落 1', { exact: true });
   await source.evaluate(node => { const textarea = node as HTMLTextAreaElement; textarea.focus(); textarea.setSelectionRange(0, 3); });
-  await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
+  await page.getByRole('button', { name: '高亮 / 取消高亮 1', exact: true }).click();
   await expect(marks).toHaveText(['runs', 'took off', 'take off']);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(marks).toHaveCount(5);
   await page.getByRole('button', { name: 'Redo', exact: true }).click();
   await expect(marks).toHaveCount(3);
   await source.evaluate(node => { const textarea = node as HTMLTextAreaElement; const start = textarea.value.indexOf('runner'); textarea.focus(); textarea.setSelectionRange(start, start + 3); });
-  await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
+  await page.getByRole('button', { name: '高亮 / 取消高亮 1', exact: true }).click();
   await expect(page.getByRole('status')).toHaveText('Warning: 请选择完整的单词或词组。');
   expect(await page.evaluate(() => window.editor.project.vocabulary.length)).toBe(1);
   for (const term of ['runner', 'ran away']) {
     await source.evaluate((node, term) => { const textarea = node as HTMLTextAreaElement; const start = textarea.value.indexOf(term); textarea.focus(); textarea.setSelectionRange(start, start + term.length); }, term);
-    await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
+    await page.getByRole('button', { name: '高亮 / 取消高亮 1', exact: true }).click();
   }
   const activeText = 'runsrunnertook offtake offran away';
   await expect.poll(async () => (await marks.allTextContents()).join('')).toBe(activeText);

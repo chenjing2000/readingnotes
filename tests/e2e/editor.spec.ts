@@ -35,6 +35,7 @@ async function assertCoverage(page: Page) {
 
 test('real editing, portable JSON, history, drafts and invalid imports', async ({ page }) => {
   await page.goto('/'); await ready(page);
+  await expect(page.getByRole('button', { name: /删除英文段落/ })).toHaveCount(0);
   await expect(page.getByLabel('英文段落 2', { exact: true })).toHaveValue(fixture.source.paragraphs[1].text);
   const changed = fixture.source.paragraphs[1].text.replace('supposedly', 'reportedly and supposedly');
   await page.getByLabel('英文段落 2', { exact: true }).fill(changed); await ready(page);
@@ -59,6 +60,7 @@ test('real editing, portable JSON, history, drafts and invalid imports', async (
   await page.getByLabel('短语 10', { exact: true }).fill('temporary phrase');
   await page.getByRole('button', { name: '删除表达 10', exact: true }).click();
   await page.getByRole('button', { name: '主旨与译文', exact: true }).click();
+  await expect(page.getByRole('button', { name: /删除中文段落/ })).toHaveCount(0);
   await page.getByLabel('Main Idea', { exact: true }).fill('新的主旨');
   await page.getByLabel('中文段落 1', { exact: true }).fill('');
   await expect(page.getByText('空段落将保留', { exact: false }).first()).toBeVisible();
@@ -95,10 +97,10 @@ test('entry rule highlights all occurrences and keeps preview navigation', async
   await load(page, { ...fixture, source: { paragraphs: [{ id: 'p', text: 'word word' }] } });
   const input = page.getByLabel('英文段落 1', { exact: true });
   await input.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 9); });
-  await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click(); await ready(page);
+  await page.getByRole('button', { name: '高亮 / 取消高亮 1', exact: true }).click(); await ready(page);
   await expect(page.locator('.card .hot')).toHaveText(['word', 'word']);
   await input.evaluate((node: HTMLTextAreaElement) => { node.focus(); node.setSelectionRange(5, 9); });
-  await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click(); await ready(page);
+  await page.getByRole('button', { name: '高亮 / 取消高亮 1', exact: true }).click(); await ready(page);
   await expect(page.locator('.card .hot')).toHaveCount(0);
   await page.getByRole('button', { name: '样式', exact: true }).click();
   await page.locator('.card [data-source="p"]').click();

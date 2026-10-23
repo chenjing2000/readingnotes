@@ -26,7 +26,7 @@ export function useEditorViewModel() {
   function showWarning(text: string) { setWarning({ text }); }
   useEffect(() => {
     if (!warning) return;
-    const timer = setTimeout(() => setWarning(current => current === warning ? null : current), 6000);
+    const timer = setTimeout(() => setWarning(current => current === warning ? null : current), 10000);
     return () => clearTimeout(timer);
   }, [warning]);
   useEffect(() => {
@@ -159,9 +159,6 @@ export function useEditorViewModel() {
   function addParagraph(key: ParagraphCollection) {
     update(current => ({ ...current, [key]: { paragraphs: [...current[key].paragraphs, { id: newId(), text: '' }] } }));
   }
-  function removeParagraph(key: ParagraphCollection, id: string) {
-    update(current => ({ ...current, [key]: { paragraphs: current[key].paragraphs.filter(item => item.id !== id) } }));
-  }
   function highlightRange(paragraphId: string, start: number, end: number) {
     if (start === end) { showWarning('请先在英文段落中选择要标注的文字。'); return; }
     const next = toggleHighlight(project, paragraphId, start, end);
@@ -239,7 +236,7 @@ export function useEditorViewModel() {
     project, warning, error, settingsReady, ready, exporting, hasFileChanges,
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
-    undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
+    undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph,
     highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
     clearError, downloadRejectedDraft,
