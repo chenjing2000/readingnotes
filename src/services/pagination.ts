@@ -228,7 +228,6 @@ export async function paginate(project: Project): Promise<Layout> {
       pageBody!.append(row); used += height;
     }
     function block(value: Block) {
-      if (project.layoutOverrides.manualPageBreaks.includes(layoutKey(value.kind, value.id)) && used > 0) newPage();
       const lines = measureLines(project, value, width, host, width, highlights);
       lines.forEach((line, index) => addRow([line], width, index === 0 ? (value.gap ?? 0) : 0));
     }
@@ -263,7 +262,6 @@ export async function paginate(project: Project): Promise<Layout> {
           });
           return measureLines(project, { id: entry.id, text, kind: 'vocab', runs }, columnWidth, host, columnWidth, highlights);
         });
-        if (entries.some(entry => entry && project.layoutOverrides.manualPageBreaks.includes(layoutKey('vocab', entry.id))) && used > 0) newPage();
         for (let lineIndex = 0; lineIndex < Math.max(...columns.map(column => column.length)); lineIndex++) addRow([columns[0][lineIndex], columns[1][lineIndex]], columnWidth, lineIndex === 0 ? 15 : 0);
       }
     }

@@ -146,7 +146,7 @@ test('line pagination preserves long sentences, Chinese, graphemes, columns and 
   expect(await assertCoverage(page)).toEqual([]);
 });
 
-test('styles inherit, short content flows, breaks persist, exports match preview and repeat exactly', async ({ page, request }) => {
+test('styles inherit, short content flows, exports match preview and repeat exactly', async ({ page, request }) => {
   await page.goto('/'); await ready(page);
   await load(page, fixture);
   await expect(page.locator('.card').first()).toHaveCSS('background-color', 'rgb(248, 248, 246)');
@@ -189,6 +189,5 @@ test('styles inherit, short content flows, breaks persist, exports match preview
   await expect(page.locator('.card')).toHaveCount(1);
   await expect(page.locator('.card .section-heading')).toHaveCount(3);
   await page.getByRole('button', { name: '主旨与译文', exact: true }).click();
-  await page.getByLabel('中文段落 1 前换页').check(); await ready(page);
-  await expect(page.locator('.card')).toHaveCount(2);
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
 });

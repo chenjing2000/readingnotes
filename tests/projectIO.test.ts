@@ -10,7 +10,7 @@ it('rejects an old-format draft while preserving its original bytes in quarantin
   vi.stubGlobal('localStorage', { getItem: (key: string) => store.get(key) ?? null, setItem: (key: string, value: string) => store.set(key, value) });
   try {
     const restored = restoreDraft();
-    expect(restored.project.schemaVersion).toBe(4);
+    expect(restored.project.schemaVersion).toBe(5);
     expect(restored.rejected).toBe(raw);
     expect(restored.notice).toContain('格式不受支持');
     expect(store.get('reading-editor.rejected-draft')).toBe(raw);

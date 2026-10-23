@@ -4,13 +4,6 @@ import { defaults, settingsSchema, type Styles } from './settings';
 export { defaults, settingsSchema as styleSchema, type Styles } from './settings';
 
 const id = z.string().min(1).max(200);
-// A layout key contains a kind and an ID; JSON escaping can expand each ID character to six characters.
-const pageBreakKey = z.string().min(1).max(2048).refine(value => {
-  try {
-    const key: unknown = JSON.parse(value);
-    return Array.isArray(key) && key.length === 2 && key.every(part => typeof part === 'string' && part.length > 0);
-  } catch { return false; }
-}, '分页标记必须是编码后的 [kind, sourceId]');
 const text = z.string().max(300000).refine(value => !/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(value), '含无效控制字符或乱码替代符');
 const paragraph = z.object({ id, text });
 const variants = z.array(text).max(2000).default([]);
@@ -25,9 +18,8 @@ const common = {
   expressions: z.array(z.object({ id, phrase: text, highlight: variants, senses }).strict()).max(2000),
   mainIdea: text,
   theme: z.literal('classic').default('classic'),
-  layoutOverrides: z.object({ manualPageBreaks: z.array(pageBreakKey).default([]), elementStyles: z.record(z.string(), z.unknown()).default({}) }).default({ manualPageBreaks: [], elementStyles: {} }),
 };
-const currentSchema = z.object({ ...common, schemaVersion: z.literal(4), warnings: z.array(z.string()).default([]) }).strict();
+const currentSchema = z.object({ ...common, schemaVersion: z.literal(5), warnings: z.array(z.string()).default([]) }).strict();
 export type Project = z.infer<typeof currentSchema>;
 export type RenderProject = Project & { styles: Styles };
 export function projectDocument(input: RenderProject): Project { const { styles: _settings, ...document } = input; return document; }
@@ -47,8 +39,8 @@ export const newId = () => crypto.randomUUID();
 export const layoutKey = (kind: string, sourceId: string) => JSON.stringify([kind, sourceId]);
 
 export function parseProject(input: unknown): Project {
-  if (input && typeof input === 'object' && 'schemaVersion' in input && input.schemaVersion !== 4) {
-    throw new Error('仅支持 schemaVersion: 4，旧格式不再支持，请按当前 skill 重新生成 JSON。');
+  if (input && typeof input === 'object' && 'schemaVersion' in input && input.schemaVersion !== 5) {
+    throw new Error('仅支持 schemaVersion: 5，旧格式不再支持，请按当前 skill 重新生成 JSON。');
   }
   const project = currentSchema.parse(input);
   const ids = [project.id, ...project.source.paragraphs.map(item => item.id), ...project.translation.paragraphs.map(item => item.id), ...project.vocabulary.map(item => item.id), ...project.expressions.map(item => item.id)];
@@ -127,17 +119,7 @@ export function commitEntryHead(project: Project, key: EntryCollection, entryId:
 export function removeEntrySense(project: Project, key: EntryCollection, id: string, index: number): Project {
   const entry = project[key].find(entry => entry.id === id);
   if (!entry || entry.senses.length <= 1 || index < 0 || index >= entry.senses.length) return project;
-  const replacements = new Map<string, string | null>();
-  for (let i = index; i < entry.senses.length; i++) for (const field of ['meaning', 'example', 'exampleTranslation']) {
-    replacements.set(layoutKey(field, senseSourceId(id, i, field)), i === index ? null : layoutKey(field, senseSourceId(id, i - 1, field)));
-  }
-  const manualPageBreaks = project.layoutOverrides.manualPageBreaks.flatMap(mark => {
-    if (!replacements.has(mark)) return [mark];
-    const next = replacements.get(mark);
-    return next ? [next] : [];
-  });
-  return { ...project, [key]: project[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item),
-    layoutOverrides: { ...project.layoutOverrides, manualPageBreaks } };
+  return { ...project, [key]: project[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item) };
 }
 
 export function editParagraph(project: Project, paragraphId: string, next: string): Project {

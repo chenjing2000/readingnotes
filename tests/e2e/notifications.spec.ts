@@ -26,16 +26,19 @@ test('settings use keyboard text entry while mouse wheels and arrow keys do not 
   await expect(page.getByRole('alert')).toContainText('Error:');
 });
 
-test('warnings expire after six seconds without shifting the editor and errors remain until closed', async ({ page }) => {
+test('warnings slide from the bottom for six seconds and errors remain until closed', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const bar = page.getByLabel('信息提示栏');
-  const before = await bar.boundingBox();
+  await expect.poll(() => bar.evaluate(node => node.getBoundingClientRect().height)).toBe(0);
   await page.clock.install();
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
   await expect(bar).toContainText('Warning:');
+  await expect(bar.locator('.notice')).toHaveCSS('font-size', '26px');
+  await expect.poll(() => bar.evaluate(node => node.getBoundingClientRect().height)).toBeGreaterThan(0);
+  expect(await bar.evaluate(node => node.getBoundingClientRect().height)).toBeLessThanOrEqual(120);
   await page.clock.runFor(5000); await expect(bar).toContainText('Warning:');
   await page.clock.runFor(1000); await expect(bar).toHaveText('');
-  expect(await bar.boundingBox()).toEqual(before);
+  await expect.poll(() => bar.evaluate(node => node.getBoundingClientRect().height)).toBe(0);
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();
   await page.clock.runFor(5000);
   await page.getByRole('button', { name: '标注 / 取消所选重点 1', exact: true }).click();

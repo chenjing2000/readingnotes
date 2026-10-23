@@ -3,7 +3,7 @@ import fixture from '../assets/projects/brainco/project.json';
 import { collectHighlights, parseProject, toggleHighlight, editParagraph } from '../src/models/project';
 
 function project(text = 'They ran and ran. They took off.') {
-  return parseProject({ ...fixture, schemaVersion: 4, source: { paragraphs: [{ id: 'p', text }] }, vocabulary: [], expressions: [] });
+  return parseProject({ ...fixture, schemaVersion: 5, source: { paragraphs: [{ id: 'p', text }] }, vocabulary: [], expressions: [] });
 }
 
 it('stores manually selected surface forms in entries, with no top-level highlights', () => {

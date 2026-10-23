@@ -13,7 +13,7 @@ test('per-word vocabulary tables edits and moves the selected row, inserts below
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   const table = page.locator('.vocabulary-editor');
-  await expect(page.getByRole('table', { name: '词汇 1', exact: true }).getByRole('rowheader')).toHaveText(['词汇', '音标', '含义', '例句', '翻译', '义项操作']);
+  await expect(page.getByRole('table', { name: '词汇 1', exact: true }).getByRole('rowheader')).toHaveText(['词汇', '音标', '含义', '例句', '翻译']);
   const actions = page.getByRole('group', { name: '词汇行操作', exact: true });
   await expect(actions.getByRole('button')).toHaveCount(5);
   const up = actions.getByRole('button', { name: '上移选中词汇', exact: true });
@@ -56,16 +56,15 @@ test('per-word vocabulary tables edits and moves the selected row, inserts below
   await expect(page.getByLabel('词头 1', { exact: true })).toBeFocused();
 });
 
-test('table fields preserve part of speech, drafts, page breaks and preview navigation', async ({ page }) => {
+test('table fields preserve part of speech, drafts and preview navigation', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await page.getByLabel('音标 2', { exact: true }).fill('/changed/');
   await page.getByLabel('含义 2', { exact: true }).fill('n. 保留的含义');
-  await page.getByLabel('词汇 2 前换页', { exact: true }).check();
+  await page.getByLabel('含义 2', { exact: true }).press('Tab');
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const snapshot = await page.evaluate(() => window.editor.project);
   expect(snapshot.vocabulary[1]).toMatchObject({ ipa: '/changed/', senses: [{ pos: 'n.', meaning: '保留的含义' }] });
-  expect(snapshot.layoutOverrides.manualPageBreaks).toContain(JSON.stringify(['vocab', fixture.vocabulary[1].id]));
   await page.reload(); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByRole('button', { name: '词汇', exact: true }).click();
   await expect(page.getByLabel('音标 2', { exact: true })).toHaveValue('/changed/');
@@ -74,6 +73,5 @@ test('table fields preserve part of speech, drafts, page breaks and preview navi
   await expect(page.getByLabel('词头 1', { exact: true })).toBeFocused();
   await expect(page.locator('.vocabulary-entry.selected').getByLabel('词头 1', { exact: true })).toHaveValue(fixture.vocabulary[0].word);
   await page.getByLabel('词头 2', { exact: true }).click();
-  await expect(page.getByLabel('词汇 2 前换页', { exact: true })).toBeChecked();
   await page.screenshot({ path: 'artifacts/test-results/vocabulary-table.png' });
 });

@@ -6,7 +6,7 @@ import fixture from '../../assets/projects/brainco/project.json' with { type: 'j
 test('entry rules collect manual variants and persist without a top-level highlights list', async ({ page, request }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const input = {
-    ...fixture, schemaVersion: 4,
+    ...fixture, schemaVersion: 5,
     source: { paragraphs: [{ id: 'p1', text: 'RUN runs runner. They took off and take off. run. They ran away.' }] },
     vocabulary: [{ id: 'v1', word: 'run', ipa: '/rʌn/', highlight: ['run', 'runs'], senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }],
     expressions: [{ id: 'x1', phrase: 'take off', highlight: ['take off', 'took off'], senses: [{ pos: '', meaning: '起飞', example: 'They took off.', exampleTranslation: '他们起飞了。' }] }],

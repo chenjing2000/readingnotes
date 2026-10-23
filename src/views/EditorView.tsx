@@ -1,7 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { layoutKey, senseSourceId, type Styles } from '../models/project';
+import { useEffect, useRef, useState } from 'react';
+import { senseSourceId, type Styles } from '../models/project';
 import { useEditorViewModel } from '../viewmodels/useEditorViewModel';
-import VocabularyTable from './VocabularyTable';
+import VocabularyTable, { VocabularyActions } from './VocabularyTable';
+import CardPreview from './CardPreview';
+import NotificationBar from './NotificationBar';
+import ProjectActions from './ProjectActions';
 import SplitPane from './SplitPane';
 import AutoSizeTextarea from './AutoSizeTextarea';
 import EntryHeadInput from './EntryHeadInput';
@@ -11,20 +14,13 @@ type Tab = '原文' | '词汇' | '表达' | '主旨与译文' | '样式';
 
 export default function EditorView() {
   const vm = useEditorViewModel();
-  const { project, warning, error, settingsReady, ready, exporting, pages, layout, hasFileChanges, canUndo, canRedo, rejectedDraft } = vm;
+  const { project, warning, error, settingsReady, ready, exporting, layout, canUndo, canRedo, rejectedDraft } = vm;
   const [tab, setTab] = useState<Tab>('原文');
-  const [zoom, setZoom] = useState(0.46);
-  const preview = useRef<HTMLDivElement>(null);
   const inputs = useRef(new Map<string, HTMLInputElement | HTMLTextAreaElement>());
   function registerInput(id: string, input: HTMLInputElement | HTMLTextAreaElement | null) {
     if (input) inputs.current.set(id, input); else inputs.current.delete(id);
   }
   const [focusId, setFocusId] = useState('');
-  useLayoutEffect(() => {
-    if (!layout) return;
-    const wrappers = layout.pages.map(card => { const wrapper = document.createElement('div'); wrapper.className = 'card-wrapper'; wrapper.style.setProperty('--page-width', card.style.width); wrapper.style.setProperty('--page-height', card.style.height); wrapper.append(card); return wrapper; });
-    preview.current!.replaceChildren(...wrappers);
-  }, [layout]);
   useEffect(() => {
     if (!focusId) return;
     const details = inputs.current.get(focusId)?.closest('details');
@@ -50,9 +46,6 @@ export default function EditorView() {
   function field(label: string, value: string, onChange: (value: string) => void, id?: string) {
     return <label className="field" key={label}><span>{label}</span><AutoSizeTextarea label={label} value={value} inputRef={element => { if (id) registerInput(id, element); }} onChange={onChange} /></label>;
   }
-  function breakControl(id: string, label: string) {
-    return <label className="break-control"><input type="checkbox" aria-label={`${label} 前换页`} checked={project.layoutOverrides.manualPageBreaks.includes(id)} onChange={event => vm.setPageBreak(id, event.target.checked)} />前换页</label>;
-  }
   function expressions() {
     const key = 'expressions';
     const name = '表达';
@@ -67,7 +60,6 @@ export default function EditorView() {
               inputRef={input => registerInput(`${key}:${senseSourceId(entry.id, senseIndex, property)}`, input)}
               onChange={value => vm.setSenseField(key, entry.id, senseIndex, property as keyof typeof labels, value)} /></td></tr>
         ))}</tbody></table>
-      {breakControl(layoutKey('phrase', `${entry.id}:phrase`), `${name} ${index + 1}`)}
     </section>)}<button className="add-button" onClick={() => vm.addEntry(key)}>添加{name}</button></>;
   }
   const fontFields: [keyof Styles, string][] = [
@@ -88,14 +80,9 @@ export default function EditorView() {
     </tbody></table></>;
   }
   return <div className="app-shell">
-    <header className="app-header"><div className="brand-mark">Aa<span>READING STUDIO</span></div><span className="local-badge">本地 · 离线 · 私有</span><span className="spacer" />
-      <label className="button">打开 JSON<input type="file" accept=".json,application/json" aria-label="打开项目 JSON" onChange={event => { void vm.open(event.target.files?.[0]); event.target.value = ''; }} /></label>
-      <button onClick={vm.save}>保存 JSON</button><button className="primary" disabled={!ready || exporting} onClick={() => void vm.exportImages()}>{exporting ? '正在导出…' : '导出全部 PNG / ZIP'}</button>
-    </header>
-    <div className="status-bar"><span>{!hasFileChanges ? 'JSON 下载已发起 / 项目已打开' : 'JSON 尚有未另存改动'}</span><span className="spacer" /><span>{ready ? `${pages} 页 · 排版就绪` : '正在测量字体与分页…'}</span></div>
-    <SplitPane left={<aside className="editor-panel" id="editor-panel"><div className="panel-heading"><h1>精读卡片编辑器</h1><p>从文章到卡片，让每个细节都可编辑。</p></div>
+    <SplitPane left={<aside className="editor-panel" id="editor-panel"><div className="panel-heading"><h1>英语阅读卡片编辑器</h1></div>
       <nav aria-label="编辑板块">{(['原文', '词汇', '表达', '主旨与译文', '样式'] as Tab[]).map(name => <button key={name} className={name === tab ? 'active' : ''} onClick={() => setTab(name)}>{name}</button>)}</nav>
-      <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>Undo</button><button onClick={vm.redo} disabled={!canRedo}>Redo</button><span>支持最近 10 次修改</span></div>
+      <div className="history-toolbar"><button onClick={vm.undo} disabled={!canUndo}>Undo</button><button onClick={vm.redo} disabled={!canRedo}>Redo</button><span>支持最近 10 次修改</span>{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
       <div inert={!settingsReady} className="fields">
         {tab === '原文' && <>
           <label className="field"><span>个性化页眉</span><input type="text" aria-label="个性化页眉" value={project.personalizedHeader} onChange={event => vm.setProjectText('personalizedHeader', event.target.value)} /></label>
@@ -103,30 +90,30 @@ export default function EditorView() {
           <p className="hint">在下方英文框选择文字，再点“标注 / 取消”。高亮字号始终继承正文。</p>
           {project.source.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
             {field(`英文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('source', paragraph.id, value), `source:${paragraph.id}`)}
-            <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button>{breakControl(layoutKey('article', paragraph.id), `英文段落 ${index + 1}`)}</div>
+            <div className="entry-toolbar"><button aria-label={`标注 / 取消所选重点 ${index + 1}`} onMouseDown={event => event.preventDefault()} onClick={() => { const input = inputs.current.get(`source:${paragraph.id}`) as HTMLTextAreaElement; vm.highlightRange(paragraph.id, input.selectionStart, input.selectionEnd); }}>标注 / 取消所选重点</button></div>
             <button onClick={() => vm.removeParagraph('source', paragraph.id)}>删除英文段落 {index + 1}</button>
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('source')}>添加英文段落</button>
         </>}
-        {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={registerInput} focusField={setFocusId} />}
+        {tab === '词汇' && <VocabularyTable viewModel={vm} registerInput={registerInput} />}
         {tab === '表达' && expressions()}
         {tab === '主旨与译文' && <>
           {field('Main Idea', project.mainIdea, value => vm.setProjectText('mainIdea', value), 'project:mainIdea')}
-          {breakControl(layoutKey('mainIdea', 'mainIdea'), 'Main Idea')}
           {project.translation.paragraphs.map((paragraph, index) => <section className="edit-entry" key={paragraph.id}>
             {field(`中文段落 ${index + 1}`, paragraph.text, value => vm.setParagraphText('translation', paragraph.id, value), `translation:${paragraph.id}`)}
             {!paragraph.text && <p className="hint">空段落将保留，不影响其他段落。</p>}
-            <div className="entry-toolbar">{breakControl(layoutKey('translation', paragraph.id), `中文段落 ${index + 1}`)}<span className="spacer" /><button onClick={() => vm.removeParagraph('translation', paragraph.id)}>删除中文段落 {index + 1}</button></div>
+            <div className="entry-toolbar"><span className="spacer" /><button onClick={() => vm.removeParagraph('translation', paragraph.id)}>删除中文段落 {index + 1}</button></div>
           </section>)}
           <button className="add-button" onClick={() => vm.addParagraph('translation')}>添加中文段落</button>
         </>}
         {tab === '样式' && <><p className="hint">字号与页面尺寸单位为 px；修改有效配置后自动保存到 config/settings.json。</p>
           {settingsTable('字号设置', fontFields)}{settingsTable('其余设置', otherFields)}
           <button className="add-button" onClick={vm.resetStyles}>恢复模板默认</button></>}
-      </div><div className={`notice${error ? ' notice-error' : warning ? ' notice-warning' : ''}`} aria-label="信息提示栏">{error ? <div role="alert">Error: {error}<button onClick={vm.clearError}>关闭</button></div> : warning ? <div role="status">Warning: {warning.text}</div> : null}{rejectedDraft && <button onClick={vm.downloadRejectedDraft}>下载原始草稿</button>}</div>
-    </aside>} right={<section className="preview-panel" id="preview-panel" aria-label="分页预览"><div className="preview-toolbar"><b>实时预览</b><span>{project.styles.pageWidth} × {project.styles.pageHeight} px</span><span className="spacer" /><label>缩放 <select aria-label="预览缩放" value={zoom} onChange={event => setZoom(Number(event.target.value))}>{[0.3, 0.4, 0.46, 0.5, 0.65, 0.8, 1].map(value => <option value={value} key={value}>{Math.round(value * 100)}%</option>)}</select></label></div>
-      <div className="preview-scroll"><div className="preview" style={{ '--zoom': zoom } as React.CSSProperties} data-ready={ready} ref={preview} onClick={jump} />
+      </div><div className="editor-bottom">
+        {tab === '词汇' && <VocabularyActions viewModel={vm} focusField={setFocusId} />}
+        <NotificationBar error={error} warning={warning} closeError={vm.clearError} />
       </div>
-    </section>} />
+    </aside>} right={<CardPreview layout={layout} ready={ready} jump={jump}
+      actions={<ProjectActions open={vm.open} save={vm.save} exportImages={vm.exportImages} ready={ready} exporting={exporting} />} />} />
   </div>;
 }

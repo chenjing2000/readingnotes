@@ -388,10 +388,6 @@
   ],
   "mainIdea": "文章通过 BrainCo 的仿生肢体和神经科技设备，介绍人脑与机器交互的不同路径。",
   "theme": "classic",
-  "layoutOverrides": {
-    "manualPageBreaks": [],
-    "elementStyles": {}
-  },
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "warnings": []
 }

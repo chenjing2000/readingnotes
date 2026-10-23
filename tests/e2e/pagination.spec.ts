@@ -133,7 +133,7 @@ test('business IDs cannot collide with internal title or expression keys; vocabu
   expect(firstSeen).toEqual(project.vocabulary.map(item => item.id));
 });
 
-test('manual break with mainIdea paragraph ID affects only the chosen logical block', async ({ page }) => {
+test('paragraphs with internal-looking IDs still paginate automatically', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const project = parseRenderProject(fixture);
   project.vocabulary = []; project.expressions = [];
@@ -141,7 +141,7 @@ test('manual break with mainIdea paragraph ID affects only the chosen logical bl
   project.translation.paragraphs = []; project.mainIdea = 'Short summary.';
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'project.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(projectDocument(project))) });
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
-  await page.getByLabel('英文段落 1 前换页', { exact: true }).check();
+  await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
-  await expect(page.locator('.card')).toHaveCount(2);
+  await expect(page.locator('.card')).toHaveCount(1);
 });

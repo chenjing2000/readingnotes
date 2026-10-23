@@ -60,7 +60,8 @@ try {
   await page.locator('.preview').evaluate(node => { (node as HTMLElement).style.setProperty('--zoom', '1'); });
   let previewIdentical = true;
   for (let index = 0; index < pngNames.length; index++) {
-    const preview = await page.locator('.card').nth(index).screenshot();
+    // Floating workspace controls can overlap the card on screen, but are not part of its image.
+    const preview = await page.locator('.card').nth(index).screenshot({ style: '.project-actions,.zoom-indicator{visibility:hidden!important}' });
     previewIdentical = previewIdentical && preview.equals(Buffer.from(files[pngNames[index]]));
   }
   let protectedFiles: number | null = null;

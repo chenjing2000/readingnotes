@@ -4,7 +4,7 @@ import { collectHighlights, parseProject, toggleHighlight } from '../src/models/
 import { readProject } from '../src/services/projectIO';
 
 function project(text: string, words: string[], phrases: string[] = []) {
-  return parseProject({ ...fixture, schemaVersion: 4, source: { paragraphs: [{ id: 'p1', text }] }, vocabulary: [{ id: 'v1', word: 'run', highlight: words, senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }], expressions: [{ id: 'x1', phrase: 'take off', highlight: phrases, senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }] }] });
+  return parseProject({ ...fixture, schemaVersion: 5, source: { paragraphs: [{ id: 'p1', text }] }, vocabulary: [{ id: 'v1', word: 'run', highlight: words, senses: [{ pos: 'v.', meaning: '跑', example: '', exampleTranslation: '' }] }], expressions: [{ id: 'x1', phrase: 'take off', highlight: phrases, senses: [{ pos: '', meaning: '起飞', example: '', exampleTranslation: '' }] }] });
 }
 
 it('preserves variant lists and rejects invalid list types', () => {

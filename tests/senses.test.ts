@@ -1,10 +1,10 @@
 import { expect, it } from 'vitest';
 import fixture from '../assets/projects/brainco/project.json';
-import { parseProject, collectHighlights, commitEntryHead, layoutKey, removeEntrySense, senseSourceId, splitSenseMeaning } from '../src/models/project';
+import { parseProject, collectHighlights, commitEntryHead, removeEntrySense, senseSourceId, splitSenseMeaning } from '../src/models/project';
 
 it('round-trips schema 3 without scalar entry fields', () => {
   const project = parseProject(fixture);
-  expect(project.schemaVersion).toBe(4);
+  expect(project.schemaVersion).toBe(5);
   expect(project.vocabulary[0].senses[0]).toMatchObject(fixture.vocabulary[0].senses[0]);
   expect(project.expressions[0].senses[0]).toMatchObject(fixture.expressions[0].senses[0]);
   expect(project.vocabulary[0]).not.toHaveProperty('pos');
@@ -24,7 +24,7 @@ it('splits a combined sense editor without mixing meanings or changing custom ex
 it('keeps distinct senses and their examples together and rejects missing sense lists', () => {
   const project = parseProject(fixture);
   const sense = { pos: 'n.', meaning: '记录', example: 'Keep a record.', exampleTranslation: '保留记录。' };
-  const input = { ...project, schemaVersion: 4, vocabulary: [{ id: 'v', word: 'record', ipa: '', highlight: ['recorded'], senses: [sense, { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' }] }] };
+  const input = { ...project, schemaVersion: 5, vocabulary: [{ id: 'v', word: 'record', ipa: '', highlight: ['recorded'], senses: [sense, { pos: 'v.', meaning: '录制', example: 'They recorded it.', exampleTranslation: '他们录制了它。' }] }] };
   expect(parseProject(input).vocabulary[0].senses).toEqual(input.vocabulary[0].senses);
   expect(() => parseProject({ ...input, vocabulary: [{ ...input.vocabulary[0], senses: undefined }] })).toThrow();
 });
@@ -47,19 +47,13 @@ it('uses unambiguous sense source IDs even when entry IDs contain separators', (
   expect(senseSourceId('x', 1, 'meaning')).not.toBe(senseSourceId('x', 2, 'meaning'));
 });
 
-it('removes a sense and remaps only its entry page breaks without mutating the source', () => {
+it('removes a sense without mutating the source and protects the final sense', () => {
   const input = parseProject(fixture);
   const entry = input.expressions[0];
   entry.senses.push({ pos: '', meaning: '另一含义', example: 'Another example.', exampleTranslation: '另一个例句。' });
-  const first = layoutKey('meaning', senseSourceId(entry.id, 0, 'meaning'));
-  const second = layoutKey('example', senseSourceId(entry.id, 1, 'example'));
-  const unrelated = layoutKey('article', input.source.paragraphs[0].id);
-  input.layoutOverrides.manualPageBreaks = [first, second, unrelated];
   const result = removeEntrySense(input, 'expressions', entry.id, 0);
   expect(result.expressions[0].senses).toEqual([entry.senses[1]]);
-  expect(result.layoutOverrides.manualPageBreaks).toEqual([layoutKey('example', senseSourceId(entry.id, 0, 'example')), unrelated]);
   expect(input.expressions[0].senses).toHaveLength(2);
-  expect(input.layoutOverrides.manualPageBreaks).toEqual([first, second, unrelated]);
   expect(parseProject(JSON.parse(JSON.stringify(result)))).toEqual(result);
   expect(removeEntrySense(result, 'expressions', entry.id, 0)).toBe(result);
 });

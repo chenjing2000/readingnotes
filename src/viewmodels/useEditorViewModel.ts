@@ -172,9 +172,6 @@ export function useEditorViewModel() {
     setRendered(null);
     setHighlightRefresh(current => current + 1);
   }
-  function setPageBreak(id: string, checked: boolean) {
-    update(current => ({ ...current, layoutOverrides: { ...current.layoutOverrides, manualPageBreaks: checked ? [...current.layoutOverrides.manualPageBreaks, id] : current.layoutOverrides.manualPageBreaks.filter(item => item !== id) } }));
-  }
   function reorder(key: EntryCollection, index: number, direction: number) {
     update(current => { const list = [...current[key]]; const destination = index + direction; if (destination < 0 || destination >= list.length) return current; [list[index], list[destination]] = [list[destination], list[index]]; return { ...current, [key]: list }; });
   }
@@ -243,7 +240,7 @@ export function useEditorViewModel() {
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
     layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph, removeParagraph,
-    highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, setPageBreak, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
+    highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,
     clearError, downloadRejectedDraft,
   };

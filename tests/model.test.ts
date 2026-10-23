@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import fixture from '../assets/projects/brainco/project.json';
-import { collectHighlights, parseProject, editParagraph, toggleHighlight, defaults, layoutKey } from '../src/models/project';
+import { collectHighlights, parseProject, editParagraph, toggleHighlight, defaults } from '../src/models/project';
 
 describe('project persistence and entry highlights', () => {
   it('defaults missing personalized headers and preserves custom or empty values', () => {
@@ -14,7 +14,7 @@ describe('project persistence and entry highlights', () => {
   });
   it('preserves both independent content snapshots', () => {
     const project = parseProject(fixture);
-    expect(project.schemaVersion).toBe(4);
+    expect(project.schemaVersion).toBe(5);
     for (const [key, filename] of [['source', 'article'], ['translation', 'translation']] as const) {
       const snapshot = readFileSync(`assets/projects/brainco/${filename}.md`, 'utf8').replace(/\r\n/g, '\n').trim();
       expect(project[key].paragraphs.map(item => item.text).join('\n\n')).toBe(snapshot);
@@ -49,10 +49,9 @@ describe('project persistence and entry highlights', () => {
     expect(collectHighlights(project)).toHaveLength(1);
     expect(project.vocabulary.find(entry => entry.word === 'word')?.highlight).toEqual(['word']);
   });
-  it('round-trips page breaks for maximum-length IDs, including JSON escapes', () => {
+  it('round-trips maximum-length paragraph IDs including JSON escapes', () => {
     const paragraphId = '\u0001'.repeat(200);
     const project = parseProject({ ...fixture, source: { paragraphs: [{ id: paragraphId, text: 'Article' }] } });
-    project.layoutOverrides.manualPageBreaks = [layoutKey('article', paragraphId)];
     expect(parseProject(JSON.parse(JSON.stringify(project)))).toEqual(project);
 
   });

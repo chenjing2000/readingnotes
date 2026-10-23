@@ -43,7 +43,7 @@ test('manual heads retain surface rules, senses stay paired and refresh preserve
   await expect(page.getByLabel('信息提示栏')).toHaveText('');
   const pending = page.waitForEvent('download'); await page.getByRole('button', { name: '保存 JSON', exact: true }).click();
   const saved = JSON.parse(await readFile((await (await pending).path())!, 'utf8'));
-  expect(saved.schemaVersion).toBe(4);
+  expect(saved.schemaVersion).toBe(5);
   expect(saved.vocabulary[1].highlight).toEqual(['record']);
   expect(saved.vocabulary[1].senses).toEqual([
     { pos: 'n.', meaning: '记录', example: 'Keep a record.', exampleTranslation: '保留记录。' },

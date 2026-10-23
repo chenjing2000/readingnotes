@@ -1,8 +1,8 @@
 import { test, expect } from './fixtures';
 import fixture from '../../assets/projects/brainco/project.json' with { type: 'json' };
-import { emptySense, layoutKey, parseProject, senseSourceId } from '../../src/models/project';
+import { emptySense, parseProject } from '../../src/models/project';
 
-test('distinct sense keys preserve navigation, page breaks, removal history and export', async ({ page, request }) => {
+test('distinct sense keys preserve navigation, removal history and export', async ({ page, request }) => {
   const input = parseProject(fixture);
   input.source.paragraphs = []; input.translation.paragraphs = []; input.mainIdea = '';
   input.vocabulary = [
@@ -13,14 +13,11 @@ test('distinct sense keys preserve navigation, page breaks, removal history and 
     { id: 'x', phrase: 'take off', highlight: [], senses: [{ ...emptySense(), meaning: 'meaning-one' }, { ...emptySense(), meaning: 'meaning-two' }] },
     { id: 'x:sense:1', phrase: 'another phrase', highlight: [], senses: [{ ...emptySense(), meaning: 'meaning-three' }] },
   ];
-  input.layoutOverrides.manualPageBreaks = [layoutKey('meaning', senseSourceId('x', 1, 'meaning'))];
   await page.goto('/'); await expect(page.locator('[data-ready="true"]')).toBeVisible();
   await page.getByLabel('打开项目 JSON').setInputFiles({ name: 'sense-keys.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(input)) });
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   const meanings = page.locator('.meaning .line-content');
   await expect(meanings).toHaveText(['meaning-one', 'meaning-two', 'meaning-three']);
-  const pages = await page.locator('.meaning').evaluateAll(nodes => nodes.map(node => Number(node.closest('.card')!.getAttribute('data-page'))));
-  expect(pages[1]).toBeGreaterThan(pages[0]);
   await page.locator('.vocab [data-edit]').filter({ hasText: 'A distinct example.' }).click();
   await expect(page.getByLabel('词汇例句 2 义项 1', { exact: true })).toBeFocused();
   await expect(page.getByLabel('词头 2', { exact: true })).toHaveValue('record');
@@ -32,7 +29,6 @@ test('distinct sense keys preserve navigation, page breaks, removal history and 
   await expect(page.locator('[data-ready="true"]')).toBeVisible();
   let snapshot = await page.evaluate(() => window.editor);
   expect(snapshot.project.vocabulary[1].senses.map(sense => sense.meaning)).toEqual(['记录']);
-  expect(snapshot.project.layoutOverrides.manualPageBreaks).toEqual(input.layoutOverrides.manualPageBreaks);
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect(page.getByLabel('含义 2 义项 2', { exact: true })).toHaveValue('n. 记录');
   await page.getByRole('button', { name: 'Redo', exact: true }).click();

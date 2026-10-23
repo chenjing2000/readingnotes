@@ -5,7 +5,7 @@ description: Use when a user provides an English article and wants an importable
 
 # 文章转 EnglishNotes 精读卡片 JSON
 
-将用户提供的英文文章或已有 schema 4 EnglishNotes 项目整理为可通过“打开 JSON”导入的文件，使用 `schemaVersion: 4`。高亮只由各词汇、表达条目的 `highlight` 列表管理；不要输出顶层 `highlights` 或误拼的 `hightlights`。本文可单独上传给 ChatGPT 等 LLM 使用，不要求访问仓库或运行代码。
+将用户提供的英文文章或已有 schema 5 EnglishNotes 项目整理为可通过“打开 JSON”导入的文件，使用 `schemaVersion: 5`。高亮只由各词汇、表达条目的 `highlight` 列表管理；不要输出顶层 `highlights` 或误拼的 `hightlights`。本文可单独上传给 ChatGPT 等 LLM 使用，不要求访问仓库或运行代码。
 
 ## 输入与交付
 
@@ -21,7 +21,7 @@ description: Use when a user provides an English article and wants an importable
 
 | 字段 | 格式与用途 |
 |---|---|
-| `schemaVersion` | 数字 `4`，不要生成旧版 `1`、`2` 或 `3` |
+| `schemaVersion` | 数字 `5`，不要生成旧版 `1`、`2`、`3` 或 `4` |
 | `id` | 项目唯一字符串，如 `project-small-gardens` |
 | `title` | 英文标题字符串 |
 | `personalizedHeader` | 页眉字符串；默认 `SOME BIRDS ON TREE`，用户提供时原样保留，空字符串表示右侧留空 |
@@ -31,7 +31,6 @@ description: Use when a user provides an English article and wants an importable
 | `expressions` | 表达对象数组，格式见下文 |
 | `mainIdea` | 主旨字符串，不能写成对象或数组 |
 | `theme` | 固定字符串 `classic` |
-| `layoutOverrides` | 默认 `{ "manualPageBreaks": [], "elementStyles": {} }` |
 | `warnings` | 默认 `[]`，不要在这里塞解释或学习笔记 |
 
 `readingLevel` 是可选数字，程序未规定分级体系；用户未提供时省略，不能自行假设为 CEFR 字符串。缺少 `personalizedHeader`、`theme` 等字段时程序虽能补默认值，生成任务仍按上表完整输出以便移交和检查。
@@ -45,7 +44,7 @@ description: Use when a user provides an English article and wants an importable
 - 表达对象：`{ "id": "expr-001", "phrase": "bring people together", "highlight": ["bring people together"], "senses": [{ "pos": "", "meaning": "让人们相聚", "example": "Music can bring people together at a neighborhood festival.", "exampleTranslation": "音乐能在社区节庆活动中让人们相聚。" }] }`。不能把 `phrase` 改名为 `expression`。
 - 两类条目都必须提供非空 `senses` 数组。每个义项是 `{ "pos": "词性", "meaning": "对应中文含义", "example": "该义项的英文例句", "exampleTranslation": "该例句的中文翻译" }`。未知内容留空字符串；暂未整理的条目也保留一个四字段均为空的义项。词性使用 `n.`、`v.` 等简明形式，短语无法适用时用空字符串。不要把词性拼进 meaning，也不要使用彼此分离的 pos/meaning/example 数组。
 - 同一词条有不同词性或不同含义时，各自建立 sense，即使词性相同也不能把不同含义压成一项。所有词汇和词组表达的每个义项都必须重新造英文例句，准确体现该项词性和含义，并逐项生成对应的中文翻译。新文章生成和已有 JSON 整理均适用：不得直接引用原文整句或截取原文片段作为例句，也不原样沿用已有 example；应另拟贴合该义项的新句子。新编教学例句不作为原文引文或文章事实，不得为造句虚构词义或音标。多义项与例句的关联不能依赖多个并行列表的下标。
-- schema 4 不再在词汇或表达条目顶层放 `pos`、`meaning`、`example`、`exampleTranslation`；它们只属于 `senses` 中的对象。程序词汇页每个单词一张两列表格；每个 sense 按含义、例句、翻译逐组显示，含义编辑框按“词性＋一个空格＋释义”填写；JSON 仍分别保存这两个字段，不把编辑框的合并显示文本直接写入 meaning。表达页不提供独立词性框或义项增删按钮，但导入的所有义项及其 pos 数据仍保留。
+- schema 5 不再在词汇或表达条目顶层放 `pos`、`meaning`、`example`、`exampleTranslation`；它们只属于 `senses` 中的对象。程序词汇页每个单词一张两列表格；每个 sense 按含义、例句、翻译逐组显示，含义编辑框按“词性＋一个空格＋释义”填写；JSON 仍分别保存这两个字段，不把编辑框的合并显示文本直接写入 meaning。表达页不提供独立词性框或义项增删按钮，但导入的所有义项及其 pos 数据仍保留。
 - 原文中的换行用 JSON 转义 `\n` 表示，双引号和反斜杠分别转义为 `\"`、`\\`。不要在 JSON 字符串中直接写未转义换行。
 
 ### 词典形式整理、ID 和高亮
@@ -57,16 +56,14 @@ description: Use when a user provides an English article and wants an importable
 - 补全与词典形式和原文语境一致的音标、各义项的词性和释义，保留这些字段已有的有效内容；例句及其翻译按上述要求全部重新编写。项目标题、原文、译文、主旨、页眉等不属于本次词汇整理范围时保持，不为统一词形而改写文章。
 - 高亮只扫描 `source.paragraphs`：忽略大小写，匹配前后不能是字母、数字、组合标记或下划线，避免 `run` 命中 `runner`。规则是字面量而非正则；词组内连续空白或段内换行可互相匹配，不跨段落，重复/重叠命中合并。程序自行计算仅供渲染使用的位置，JSON 不存任何高亮坐标或高亮 ID。
 - 手工标注会将所选完整单词/词组的原形或变体直接收集到词汇或表达条目的列表，部分单词选区会提示重新选择；取消时移除覆盖该选择的规则，其所有命中一起取消。原文编辑、草稿恢复、重新导入及导出都根据同一份条目规则显示，不存在另一个全局高亮总表。词汇加号右侧的 ↻ 按钮统一刷新词汇与表达在正文中的命中，只重算列表，不补词典词头、不还原词形、不改变已取消的空列表；命中坐标只在内存中使用，无临时文件。
-- 项目、原文段落、译文段落、词汇、表达的 ID 必须全局唯一。修改已有项目时保留未合并对象的 ID；合并词条优先保留已有词典形式条目的 ID，否则保留首个条目的 ID，并将相关手动前换页标记改为保留的 ID。
-- 仅支持当前 schemaVersion: 4。程序不兼容 schema 1/2/3，不迁移旧顶层高亮、旧释义字段或裸分页 ID；用户提供旧项目时说明需要依据文章重新生成当前格式，不输出假装可直接导入的旧结构。
+- 项目、原文段落、译文段落、词汇、表达的 ID 必须全局唯一。修改已有项目时保留未合并对象的 ID；合并词条优先保留已有词典形式条目的 ID，否则保留首个条目的 ID。
+- 仅支持当前 schemaVersion: 5。程序不兼容 schema 1/2/3/4，不迁移旧顶层高亮、旧释义字段或手动分页设置；用户提供旧项目时说明需要依据文章重新生成当前格式，不输出假装可直接导入的旧结构。
 
 ### 样式和分页
 
 - 文章 JSON 禁止输出 `styles` 或其他全局配置字段。所有字号、行距、边距和页面尺寸由程序单独读取 `config/settings.json`，打开文章不会改变配置。不要将配置对象合并进文章。栏目标题固定为 #d9883d，不由文章控制。
+- 程序只支持自动分页；禁止输出 layoutOverrides、manualPageBreaks、elementStyles 等手动排版字段。
 - 不生成 `pages`、`pageCount`、逐行诊断、`signature`、浏览器缩放或分页片段。视觉页数由程序根据字体与完整正文自动计算。
-- 默认让 `manualPageBreaks` 留空。确需前换页时，每项是 `JSON.stringify([kind, sourceId])` 的结果字符串，例如英文第二段前换页写成 `"[\"article\",\"en-002\"]"`，表达短语前换页写成 `"[\"phrase\",\"expr-001:phrase\"]"`；不能直接放数组或裸 ID。除非用户明确要求，不生成这类手动标记。
-- 表达义项的前换页键：首义项 sourceId 为 `条目ID:字段名`，后续义项为 `JSON.stringify([条目ID, 义项零基下标, 字段名])`，字段名为 meaning/example/exampleTranslation；再按上条规则编码外层 `[kind, sourceId]`。合并或移除义项时同步更新引用。词汇只支持整个词条的前换页，使用 kind 为 vocab、sourceId 为词汇 ID。
-- `elementStyles` 为保留字段，当前不应用单元素样式，保持 `{}`。
 
 ### 容量和禁止内容
 
@@ -80,7 +77,7 @@ description: Use when a user provides an English article and wants an importable
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "project-small-gardens",
   "title": "Small Gardens",
   "personalizedHeader": "SOME BIRDS ON TREE",
@@ -137,10 +134,6 @@ description: Use when a user provides an English article and wants an importable
   ],
   "mainIdea": "小花园有助于促进人与人之间的联系。",
   "theme": "classic",
-  "layoutOverrides": {
-    "manualPageBreaks": [],
-    "elementStyles": {}
-  },
   "warnings": []
 }
 ```
