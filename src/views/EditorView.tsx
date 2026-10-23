@@ -23,8 +23,6 @@ export default function EditorView() {
   const [focusId, setFocusId] = useState('');
   useEffect(() => {
     if (!focusId) return;
-    const details = inputs.current.get(focusId)?.closest('details');
-    if (details) details.open = true;
     inputs.current.get(focusId)?.focus();
     inputs.current.get(focusId)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
     setFocusId('');

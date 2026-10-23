@@ -18,7 +18,7 @@ function typography(block: Block, styles: Styles): Partial<CSSStyleDeclaration> 
   let color = '#1f1f1f';
   switch (block.kind) {
     case 'title': fontSize = styles.titleSize; lineHeight = 1.22; fontWeight = '800'; break;
-    case 'section-heading': fontSize = styles.headingSize; lineHeight = 1.4; fontWeight = '800'; color = '#d9883d'; break;
+    case 'section-heading':
     case 'vocab-heading': fontSize = styles.headingSize; lineHeight = 1.4; fontWeight = '800'; color = '#d9883d'; break;
     case 'vocab': fontSize = styles.vocabularySize; lineHeight = styles.lineHeight; break;
     case 'word': fontSize = styles.wordSize; fontWeight = '800'; color = '#b81a35'; break;
@@ -178,9 +178,12 @@ export async function paginate(project: Project): Promise<Layout> {
     const width = styles.pageWidth - 2 * styles.marginX;
     const bodyTop = styles.marginTop + Math.max(42, styles.headerSize * 1.4 + 16);
     const bodyHeight = styles.pageHeight - bodyTop - styles.marginBottom;
-    const headerMeasure = document.createElement('canvas').getContext('2d')!;
-    headerMeasure.font = `800 ${styles.headerSize}px "Nunito Sans"`;
-    if (headerMeasure.measureText(LABELS.header).width + LABELS.header.length * 2 > width) throw new Error('页眉文字无法放入当前页面宽度，请减小页眉字号或边距。');
+    const frameMeasure = document.createElement('canvas').getContext('2d')!;
+    frameMeasure.font = `800 ${styles.headerSize}px "Nunito Sans"`;
+    if (frameMeasure.measureText(LABELS.header).width + LABELS.header.length * 2 > width) throw new Error('页眉文字无法放入当前页面宽度，请减小页眉字号或边距。');
+    frameMeasure.font = `${styles.footerSize}px "Nunito Sans"`;
+    const footerLabelWidth = frameMeasure.measureText(LABELS.footer).width + .4 * LABELS.footer.length;
+    const footerScale = Math.min(1, (width - Math.max(110, styles.footerSize * 6)) / footerLabelWidth);
     const pages: HTMLElement[] = [];
     let pageBody: HTMLElement;
     let used = 0;
@@ -200,11 +203,7 @@ export async function paginate(project: Project): Promise<Layout> {
       const footer = document.createElement('footer'); footer.className = 'footer';
       Object.assign(footer.style, { left: `${styles.marginX}px`, right: `${styles.marginX}px`, fontSize: `${styles.footerSize}px` });
       const label = document.createElement('span'); label.textContent = LABELS.footer;
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d')!; context.font = `${styles.footerSize}px "Nunito Sans"`;
-      const labelWidth = context.measureText(label.textContent).width + .4 * label.textContent.length;
-      const factor = Math.min(1, (width - Math.max(110, styles.footerSize * 6)) / labelWidth);
-      label.style.fontSize = `${styles.footerSize * factor}px`; label.style.letterSpacing = `${.4 * factor}px`;
+      label.style.fontSize = `${styles.footerSize * footerScale}px`; label.style.letterSpacing = `${.4 * footerScale}px`;
       footer.append(label, document.createElement('span'));
       page.append(header, pageBody, footer); pages.push(page); used = 0;
     }

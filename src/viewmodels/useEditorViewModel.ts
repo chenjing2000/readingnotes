@@ -4,7 +4,7 @@ import { paginate, type Layout } from '../services/pagination';
 import { cacheDraft, download, loadSettings, saveSettings, readProject, requestExport, restoreDraft } from '../services/projectIO';
 
 type ParagraphCollection = 'source' | 'translation';
-const stringify = (project: Project) => JSON.stringify(projectDocument(project as RenderProject), null, 2);
+const stringify = (project: Project) => JSON.stringify(projectDocument(project), null, 2);
 
 export function useEditorViewModel() {
   const [boot] = useState(restoreDraft);
@@ -154,7 +154,7 @@ export function useEditorViewModel() {
     update(current => ({ ...current, [key]: value }));
   }
   function setParagraphText(key: ParagraphCollection, id: string, text: string) {
-    update(current => key === 'source' ? editParagraph(current, id, text) : { ...current, translation: { paragraphs: current.translation.paragraphs.map(item => item.id === id ? { ...item, text } : item) } });
+    update(current => editParagraph(current, id, text, key));
   }
   function addParagraph(key: ParagraphCollection) {
     update(current => ({ ...current, [key]: { paragraphs: [...current[key].paragraphs, { id: newId(), text: '' }] } }));
@@ -233,9 +233,9 @@ export function useEditorViewModel() {
   }
 
   return {
-    project, warning, error, settingsReady, ready, exporting, hasFileChanges,
+    project, warning, error, settingsReady, ready, exporting,
     canUndo: history.past.length > 0, canRedo: history.future.length > 0,
-    layout: rendered?.layout, pages: rendered?.layout.pages.length ?? 0, rejectedDraft: boot.rejected,
+    layout: rendered?.layout, rejectedDraft: boot.rejected,
     undo, redo, open, save, exportImages, setProjectText, setParagraphText, addParagraph,
     highlightRange, refreshHighlights, commitHead, setSenseField, setVocabularyMeaning, addSense, removeSense, reorder, setEntryField, addEntry, removeEntry, setStyle, resetStyles,
     selectedVocabulary, selectedVocabularyIndex, selectVocabulary, moveSelectedVocabulary, deleteSelectedVocabulary, insertVocabularyBelow,

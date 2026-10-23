@@ -22,7 +22,7 @@ const common = {
 const currentSchema = z.object({ ...common, schemaVersion: z.literal(5), warnings: z.array(z.string()).default([]) }).strict();
 export type Project = z.infer<typeof currentSchema>;
 export type RenderProject = Project & { styles: Styles };
-export function projectDocument(input: RenderProject): Project { const { styles: _settings, ...document } = input; return document; }
+export function projectDocument(input: Project & { styles?: Styles }): Project { const { styles: _settings, ...document } = input; return document; }
 export function parseRenderProject(input: unknown): RenderProject {
   const { styles, ...document } = input as Record<string, unknown>;
   return { ...parseProject(document), styles: settingsSchema.parse(styles ?? defaults) };
@@ -122,8 +122,8 @@ export function removeEntrySense(project: Project, key: EntryCollection, id: str
   return { ...project, [key]: project[key].map(item => item.id === id ? { ...item, senses: item.senses.filter((_, i) => i !== index) } : item) };
 }
 
-export function editParagraph(project: Project, paragraphId: string, next: string): Project {
-  return { ...project, source: { paragraphs: project.source.paragraphs.map(item => item.id === paragraphId ? { ...item, text: next } : item) } };
+export function editParagraph(project: Project, paragraphId: string, next: string, key: 'source' | 'translation' = 'source'): Project {
+  return { ...project, [key]: { paragraphs: project[key].paragraphs.map(item => item.id === paragraphId ? { ...item, text: next } : item) } };
 }
 
 export function toggleHighlight(project: Project, paragraphId: string, start: number, end: number): Project {
